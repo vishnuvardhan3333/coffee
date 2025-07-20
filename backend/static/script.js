@@ -796,50 +796,81 @@ class WhatYourRecipeApp {
     async handleRecipeSubmit() {
         const formData = new FormData(document.getElementById('recipeForm'));
         
+        // Helper function to convert empty strings to null for numeric fields
+        const getNumericValue = (fieldName) => {
+            const value = formData.get(fieldName);
+            return value && value.trim() !== '' ? parseFloat(value) : null;
+        };
+        
+        const getIntegerValue = (fieldName) => {
+            const value = formData.get(fieldName);
+            return value && value.trim() !== '' ? parseInt(value) : null;
+        };
+        
+        const getStringValue = (fieldName) => {
+            const value = formData.get(fieldName);
+            return value && value.trim() !== '' ? value.trim() : null;
+        };
+
         const recipe = {
+            // Required fields
             recipe_name: formData.get('recipeName'),
             description: formData.get('description'),
-            rating: formData.get('rating'),
-            date_created: formData.get('dateCreated'),
-            bean_variety: formData.get('beanVariety'),
-            bean_region: formData.get('beanRegion'),
-            india_estate: formData.get('indiaEstate'),
-            processing_type: formData.get('processingType'),
-            roast_type: formData.get('roastType'),
-            roast_level: formData.get('roastLevel'),
-            crack_time: formData.get('crackTime'),
-            roast_time: formData.get('roastTime'),
-            development_time: formData.get('developmentTime'),
-            brew_method: formData.get('brewMethod'),
-            grind_microns: formData.get('grindMicrons'),
-            water_composition: formData.get('waterComposition'),
-            tds: formData.get('tds'),
-            calcium: formData.get('calcium'),
-            magnesium: formData.get('magnesium'),
-            potassium: formData.get('potassium'),
-            sodium: formData.get('sodium'),
-            coffee_amount: formData.get('coffeeAmount'),
-            water_amount: formData.get('waterAmount'),
-            water_temp: formData.get('waterTemp'),
-            brew_time: formData.get('brewTime'),
-            milk_preference: formData.get('milkPreference'),
-            serving_temp: formData.get('servingTemp'),
-            sweetener: formData.get('sweetener'),
-            sweetener_quantity: formData.get('sweetenerQuantity'),
-            serving_size: formData.get('servingSize'),
-            aroma_notes: formData.get('aromaNotes'),
-            body: formData.get('body'),
-            acidity_type: formData.get('acidityType'),
-            sweetness: formData.get('sweetness'),
-            balance: formData.get('balance'),
-            aftertaste: formData.get('aftertaste'),
-            clean_cup: formData.get('cleanCup'),
-            uniformity: formData.get('uniformity'),
-            cupping_score: formData.get('cuppingScore'),
-            cupping_method: formData.get('cuppingMethod'),
-            defects: formData.get('defects'),
-            overall_impression: formData.get('overallImpression'),
-            brewing_notes: formData.get('brewingNotes'),
+            rating: getNumericValue('rating'),
+            date_created: getStringValue('dateCreated'),
+            
+            // Bean information
+            bean_variety: getStringValue('beanVariety'),
+            bean_region: getStringValue('beanRegion'),
+            india_estate: getStringValue('indiaEstate'),
+            processing_type: getStringValue('processingType'),
+            
+            // Roasting profile
+            roast_type: getStringValue('roastType'),
+            roast_level: getStringValue('roastLevel'),
+            crack_time: getStringValue('crackTime'),
+            roast_time: getNumericValue('roastTime'),
+            development_time: getNumericValue('developmentTime'),
+            
+            // Brewing parameters
+            brew_method: getStringValue('brewMethod'),
+            grind_microns: getIntegerValue('grindMicrons'),
+            water_composition: getStringValue('waterComposition'),
+            tds: getNumericValue('tds'),
+            calcium: getNumericValue('calcium'),
+            magnesium: getNumericValue('magnesium'),
+            potassium: getNumericValue('potassium'),
+            sodium: getNumericValue('sodium'),
+            coffee_amount: getNumericValue('coffeeAmount'),
+            water_amount: getNumericValue('waterAmount'),
+            water_temp: getIntegerValue('waterTemp'),
+            brew_time: getNumericValue('brewTime'),
+            
+            // Serving preferences
+            milk_preference: getStringValue('milkPreference'),
+            serving_temp: getStringValue('servingTemp'),
+            sweetener: getStringValue('sweetener'),
+            sweetener_quantity: getNumericValue('sweetenerQuantity'),
+            serving_size: getNumericValue('servingSize'),
+            
+            // Sensory & evaluation
+            aroma_notes: getStringValue('aromaNotes'),
+            body: getStringValue('body'),
+            acidity_type: getStringValue('acidityType'),
+            sweetness: getStringValue('sweetness'),
+            balance: getStringValue('balance'),
+            aftertaste: getStringValue('aftertaste'),
+            clean_cup: getStringValue('cleanCup'),
+            uniformity: getStringValue('uniformity'),
+            cupping_score: getNumericValue('cuppingScore'),
+            cupping_method: getStringValue('cuppingMethod'),
+            defects: getStringValue('defects'),
+            overall_impression: getStringValue('overallImpression'),
+            
+            // Additional notes
+            brewing_notes: getStringValue('brewingNotes'),
+            
+            // Privacy
             is_public: document.getElementById('recipePrivacy').checked
         };
 
