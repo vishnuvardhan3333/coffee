@@ -157,6 +157,19 @@
                     </div>
                 </nav>
                 
+                <!-- Trending Time Filter (only visible when trending view is active) -->
+                <div class="trending-filter-section" id="trendingFilterSection" style="display: none;">
+                    <h4>Trending Period</h4>
+                    <div class="trending-buttons">
+                        <button class="trending-btn active" data-trending-days="1">
+                            <i class="fas fa-clock"></i> 24 Hours
+                        </button>
+                        <button class="trending-btn" data-trending-days="7">
+                            <i class="fas fa-calendar-week"></i> 7 Days
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="sidebar-section">
                     <h3>Recommended Users</h3>
                     <div id="recommendedUsers" class="recommended-users">
@@ -199,13 +212,13 @@
                 </div>
                 
                 <div class="panel-section">
-                    <h3>Popular Tags</h3>
-                    <div class="popular-tags">
-                        <span class="tag">#espresso</span>
-                        <span class="tag">#pourover</span>
-                        <span class="tag">#coldBrew</span>
-                        <span class="tag">#latte</span>
-                        <span class="tag">#specialty</span>
+                    <h3>Trending Tags</h3>
+                    <div class="trending-timeframe">
+                        <button class="time-filter active" data-days="1">24h</button>
+                        <button class="time-filter" data-days="7">7d</button>
+                    </div>
+                    <div class="popular-tags" id="popularTags">
+                        <div class="loading-tags">Loading trending tags...</div>
                     </div>
                 </div>
             </aside>

@@ -11,6 +11,7 @@ class WhatYourRecipeApp {
         this.feedLimit = 10;
         this.currentView = 'feed';
         this.trendingDays = 7; // Default to weekly trending
+        this.tagsTimeframe = 1; // Default to daily tags
         
         this.init();
     }
@@ -57,6 +58,10 @@ class WhatYourRecipeApp {
                 // Verify token by getting user profile
                 const userData = await api.getUserProfile();
                 this.currentUser = userData;
+                
+                // Ensure clean state for existing session
+                this.resetUserSession();
+                
                 this.showMainApp();
                 return;
             } catch (error) {
@@ -106,6 +111,7 @@ class WhatYourRecipeApp {
         this.loadFeed();
         this.loadRecommendedUsers();
         this.loadActivityFeed();
+        this.loadTrendingTags();
     }
 
     setupEventListeners() {
@@ -169,6 +175,20 @@ class WhatYourRecipeApp {
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', () => {
                 this.switchView(item.dataset.view);
+            });
+        });
+
+        // Trending filter buttons
+        document.querySelectorAll('.trending-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.setTrendingDays(parseInt(btn.dataset.trendingDays));
+            });
+        });
+
+        // Tags time filter buttons
+        document.querySelectorAll('.time-filter').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.setTagsTimeframe(parseInt(btn.dataset.days));
             });
         });
 
@@ -271,6 +291,10 @@ class WhatYourRecipeApp {
             });
 
             this.currentUser = response.user;
+            
+            // Ensure clean state for new user session
+            this.resetUserSession();
+            
             this.showMainApp();
             this.showNotification('Welcome back!', 'success');
         } catch (error) {
@@ -308,12 +332,74 @@ class WhatYourRecipeApp {
     async handleLogout() {
         try {
             await api.logout();
+            
+            // Complete state reset for security
             this.currentUser = null;
+            this.currentEditingId = null;
+            this.feedPage = 0;
+            this.currentView = 'feed';
+            this.currentHashtag = null;
+            
+            // Clear all cached content
+            const feedContent = document.getElementById('feedContent');
+            if (feedContent) feedContent.innerHTML = '';
+            
+            const popularTags = document.getElementById('popularTags');
+            if (popularTags) popularTags.innerHTML = '';
+            
+            const recommendedUsers = document.getElementById('recommendedUsers');
+            if (recommendedUsers) recommendedUsers.innerHTML = '';
+            
+            const activityFeed = document.getElementById('activityFeed');
+            if (activityFeed) activityFeed.innerHTML = '';
+            
+            // Reset navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector('[data-view="feed"]').classList.add('active');
+            
+            // Hide trending filter
+            const trendingFilter = document.getElementById('trendingFilterSection');
+            if (trendingFilter) trendingFilter.style.display = 'none';
+            
+            // Close all modals
+            this.closeAllModals();
+            
             this.showAuth();
             this.showNotification('Logged out successfully', 'info');
         } catch (error) {
-            this.showNotification('Error logging out', 'error');
+            console.error('Logout error:', error);
+            // Force logout even if backend call fails
+            this.currentUser = null;
+            localStorage.removeItem('access_token');
+            api.setToken(null);
+            this.showAuth();
+            this.showNotification('Logged out (session cleared)', 'info');
         }
+    }
+
+    resetUserSession() {
+        // Reset all view states for clean user session
+        this.currentEditingId = null;
+        this.feedPage = 0;
+        this.currentView = 'feed';
+        this.currentHashtag = null;
+        this.trendingDays = 7;
+        this.tagsTimeframe = 1;
+        
+        // Clear any existing content
+        const feedContent = document.getElementById('feedContent');
+        if (feedContent) feedContent.innerHTML = '';
+        
+        // Reset navigation to home
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector('[data-view="feed"]').classList.add('active');
+        
+        // Close all modals
+        this.closeAllModals();
     }
 
     async handleResendConfirmation() {
@@ -347,8 +433,45 @@ class WhatYourRecipeApp {
         });
         document.querySelector(`[data-view="${view}"]`).classList.add('active');
 
+        // Show/hide trending filter section
+        const trendingFilter = document.getElementById('trendingFilterSection');
+        if (view === 'trending') {
+            trendingFilter.style.display = 'block';
+        } else {
+            trendingFilter.style.display = 'none';
+        }
+
         // Load content based on view
         this.loadFeed();
+    }
+
+    setTrendingDays(days) {
+        this.trendingDays = days;
+        
+        // Update button states
+        document.querySelectorAll('.trending-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-trending-days="${days}"]`).classList.add('active');
+        
+        // Reload feed if currently on trending view
+        if (this.currentView === 'trending') {
+            this.feedPage = 0;
+            this.loadFeed();
+        }
+    }
+
+    setTagsTimeframe(days) {
+        this.tagsTimeframe = days;
+        
+        // Update button states
+        document.querySelectorAll('.time-filter').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-days="${days}"]`).classList.add('active');
+        
+        // Reload trending tags
+        this.loadTrendingTags();
     }
 
     setViewMode(isProMode) {
@@ -868,7 +991,7 @@ class WhatYourRecipeApp {
             const value = formData.get(fieldName);
             return value && value.trim() !== '' ? value.trim() : null;
         };
-
+        
         const recipe = {
             // Required fields
             recipe_name: formData.get('recipeName'),
@@ -959,7 +1082,7 @@ class WhatYourRecipeApp {
                 this.showNotification('Please check your form data. Some fields may be invalid or missing.', 'error');
                 console.error('Validation error details:', error);
             } else {
-                this.showNotification('Error saving recipe. Please try again.', 'error');
+            this.showNotification('Error saving recipe. Please try again.', 'error');
             }
         }
     }
@@ -1051,7 +1174,7 @@ class WhatYourRecipeApp {
 
         try {
             const recommendations = await api.getRecommendedUsers();
-            const recommendedUsers = document.getElementById('recommendedUsers');
+        const recommendedUsers = document.getElementById('recommendedUsers');
             
             if (recommendations && recommendations.length > 0) {
                 recommendedUsers.innerHTML = recommendations.map(user => `
@@ -1062,20 +1185,20 @@ class WhatYourRecipeApp {
                                 : (user.full_name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U')
                             }
                         </div>
-                        <div class="info">
+                <div class="info">
                             <div class="name">${user.full_name || user.username}</div>
                             <div class="username">@${user.username}</div>
-                        </div>
+                </div>
                         <button class="follow-btn" onclick="event.stopPropagation(); app.quickFollow('${user.id}', this)">
                             <i class="fas fa-user-plus"></i>
                         </button>
-                    </div>
+            </div>
                 `).join('');
             } else {
                 recommendedUsers.innerHTML = `
                     <div class="no-recommendations">
                         <p>No recommendations yet. Start following users and voting on recipes to see personalized suggestions!</p>
-                    </div>
+                </div>
                 `;
             }
         } catch (error) {
@@ -1083,8 +1206,8 @@ class WhatYourRecipeApp {
             document.getElementById('recommendedUsers').innerHTML = `
                 <div class="recommendation-error">
                     <p>Unable to load recommendations</p>
-                </div>
-            `;
+            </div>
+        `;
         }
     }
 
@@ -1112,7 +1235,7 @@ class WhatYourRecipeApp {
 
         try {
             const activities = await api.getActivityFeed();
-            const activityFeed = document.getElementById('activityFeed');
+        const activityFeed = document.getElementById('activityFeed');
             
             if (activities && activities.length > 0) {
                 activityFeed.innerHTML = activities.map(activity => {
@@ -1121,19 +1244,19 @@ class WhatYourRecipeApp {
                     switch (activity.activity_type) {
                         case 'like':
                             return `
-                                <div class="activity-item">
+            <div class="activity-item">
                                     <div class="icon heart"><i class="fas fa-heart"></i></div>
                                     <div class="content">
                                         <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
                                         liked your recipe 
                                         <strong>${activity.recipe?.recipe_name}</strong>
                                         <div class="activity-time">${timeAgo}</div>
-                                    </div>
+            </div>
                                 </div>
                             `;
                         case 'follow':
                             return `
-                                <div class="activity-item">
+            <div class="activity-item">
                                     <div class="icon follow"><i class="fas fa-user-plus"></i></div>
                                     <div class="content">
                                         <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
@@ -1163,8 +1286,8 @@ class WhatYourRecipeApp {
                                         ${activity.content || 'had some activity'}
                                         <div class="activity-time">${timeAgo}</div>
                                     </div>
-                                </div>
-                            `;
+            </div>
+        `;
                     }
                 }).join('');
             } else {
@@ -1196,6 +1319,117 @@ class WhatYourRecipeApp {
         if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
         if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
         return date.toLocaleDateString();
+    }
+
+    async loadTrendingTags() {
+        try {
+            const hashtags = await api.getTrendingHashtags(10, this.tagsTimeframe);
+            const container = document.getElementById('popularTags');
+            
+            if (hashtags && hashtags.length > 0) {
+                container.innerHTML = hashtags.map(hashtag => `
+                    <span class="tag" onclick="app.filterByHashtag('${hashtag.tag}')">
+                        #${hashtag.tag}
+                        <span class="tag-count">${hashtag.recent_usage_count || hashtag.usage_count}</span>
+                    </span>
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="no-tags">
+                        <p>No trending tags yet</p>
+                        <small>Create recipes with #hashtags to see them here!</small>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading trending tags:', error);
+            document.getElementById('popularTags').innerHTML = `
+                <div class="tags-error">
+                    <p>Unable to load trending tags</p>
+                </div>
+            `;
+        }
+    }
+
+    async filterByHashtag(hashtag) {
+        try {
+            // Update the main feed to show hashtag filtered recipes
+            this.currentView = 'hashtag';
+            this.currentHashtag = hashtag;
+            this.feedPage = 0;
+            
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Hide trending filter
+            document.getElementById('trendingFilterSection').style.display = 'none';
+            
+            const feedContent = document.getElementById('feedContent');
+            feedContent.innerHTML = `
+                <div class="hashtag-header">
+                    <h2><i class="fas fa-hashtag"></i> ${hashtag}</h2>
+                    <div class="hashtag-sort">
+                        <button class="sort-btn active" onclick="app.sortHashtagResults('recent')">Recent</button>
+                        <button class="sort-btn" onclick="app.sortHashtagResults('popular')">Popular</button>
+                        <button class="sort-btn" onclick="app.sortHashtagResults('trending')">Trending</button>
+                        <button class="sort-btn" onclick="app.sortHashtagResults('rating')">Top Rated</button>
+                    </div>
+                </div>
+                <div id="hashtagResults">
+                    <div class="loading-placeholder">Loading recipes...</div>
+                </div>
+            `;
+            
+            // Load hashtag recipes
+            await this.loadHashtagRecipes('recent');
+            
+        } catch (error) {
+            console.error('Error filtering by hashtag:', error);
+            this.showNotification('Error loading hashtag recipes', 'error');
+        }
+    }
+
+    async loadHashtagRecipes(sortBy = 'recent') {
+        try {
+            const recipes = await api.getRecipesByHashtag(this.currentHashtag, sortBy);
+            const container = document.getElementById('hashtagResults');
+            
+            if (recipes && recipes.length > 0) {
+                container.innerHTML = '';
+                recipes.forEach(recipe => {
+                    container.appendChild(this.createRecipeCard(recipe));
+                });
+            } else {
+                container.innerHTML = `
+                    <div class="empty-hashtag">
+                        <i class="fas fa-hashtag"></i>
+                        <h3>No recipes found for #${this.currentHashtag}</h3>
+                        <p>Be the first to create a recipe with this hashtag!</p>
+                        <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                            Create Recipe
+                        </button>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading hashtag recipes:', error);
+            document.getElementById('hashtagResults').innerHTML = `
+                <div class="error-message">Error loading recipes for this hashtag.</div>
+            `;
+        }
+    }
+
+    async sortHashtagResults(sortBy) {
+        // Update button states
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Reload with new sort
+        await this.loadHashtagRecipes(sortBy);
     }
 
     async handleSearch(query) {
@@ -1296,16 +1530,26 @@ class WhatYourRecipeApp {
 
     async showUserProfile(userId) {
         try {
+            // Set view to profile mode
+            this.currentView = 'profile';
+            this.currentProfileId = userId;
+            
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Hide trending filter
+            const trendingFilter = document.getElementById('trendingFilterSection');
+            if (trendingFilter) trendingFilter.style.display = 'none';
+
             const [userProfile, userStats] = await Promise.all([
                 api.getUserById(userId),
                 api.getUserStats(userId)
             ]);
 
-            const modal = document.getElementById('userProfileModal');
-            const content = document.getElementById('profileModalContent');
-            const title = document.getElementById('profileModalTitle');
-
-            title.textContent = userProfile.full_name || userProfile.username;
+            const feedContent = document.getElementById('feedContent');
+            feedContent.innerHTML = '<div class="loading-placeholder">Loading profile...</div>';
 
             // Check if current user is viewing their own profile
             const isOwnProfile = userId === this.currentUser?.id;
@@ -1316,49 +1560,129 @@ class WhatYourRecipeApp {
                 followStatus = await api.getFollowStatus(userId);
             }
 
-            content.innerHTML = `
-                <div class="profile-header">
-                    <div class="profile-avatar">
-                        ${userProfile.avatar_url 
-                            ? `<img src="${userProfile.avatar_url}" alt="Avatar">`
-                            : (userProfile.full_name?.charAt(0)?.toUpperCase() || userProfile.username?.charAt(0)?.toUpperCase() || 'U')
-                        }
-                    </div>
-                    <div class="profile-info">
-                        <h2>${userProfile.full_name || userProfile.username}</h2>
-                        <p class="username">@${userProfile.username}</p>
-                        ${userProfile.bio ? `<p class="bio">${userProfile.bio}</p>` : ''}
-                        <div class="profile-stats">
-                            <span><strong>${userStats.recipes_count}</strong> Recipes</span>
-                            <span><strong>${userStats.followers_count}</strong> Followers</span>
-                            <span><strong>${userStats.following_count}</strong> Following</span>
+            feedContent.innerHTML = `
+                <div class="profile-page">
+                    <div class="profile-header">
+                        <button class="back-btn" onclick="app.goBack()">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <div class="profile-main">
+                            <div class="profile-avatar-large">
+                                ${userProfile.avatar_url 
+                                    ? `<img src="${userProfile.avatar_url}" alt="Avatar">`
+                                    : `<div class="avatar-placeholder">${userProfile.full_name?.charAt(0)?.toUpperCase() || userProfile.username?.charAt(0)?.toUpperCase() || 'U'}</div>`
+                                }
+                            </div>
+                            <div class="profile-info">
+                                <h1>${userProfile.full_name || userProfile.username}</h1>
+                                <p class="username">@${userProfile.username}</p>
+                                ${userProfile.bio ? `<p class="bio">${userProfile.bio}</p>` : ''}
+                                <div class="profile-stats">
+                                    <div class="stat">
+                                        <strong>${userStats.recipes_count}</strong>
+                                        <span>Recipes</span>
+                                    </div>
+                                    <div class="stat">
+                                        <strong>${userStats.followers_count}</strong>
+                                        <span>Followers</span>
+                                    </div>
+                                    <div class="stat">
+                                        <strong>${userStats.following_count}</strong>
+                                        <span>Following</span>
+                                    </div>
+                                </div>
+                                <div class="profile-actions">
+                                    ${!isOwnProfile ? `
+                                        <button class="btn ${followStatus.following ? 'btn-secondary' : 'btn-primary'}" 
+                                                onclick="app.toggleFollow('${userId}', this)">
+                                            <i class="fas fa-user-${followStatus.following ? 'minus' : 'plus'}"></i>
+                                            ${followStatus.following ? 'Unfollow' : 'Follow'}
+                                        </button>
+                                    ` : `
+                                        <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                                            <i class="fas fa-plus"></i> Create Recipe
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="app.showSettings()">
+                                            <i class="fas fa-cog"></i> Edit Profile
+                                        </button>
+                                    `}
+                                </div>
+                            </div>
                         </div>
-                        ${!isOwnProfile ? `
-                            <button class="btn ${followStatus.following ? 'btn-secondary' : 'btn-primary'}" 
-                                    onclick="app.toggleFollow('${userId}', this)">
-                                ${followStatus.following ? 'Unfollow' : 'Follow'}
-                            </button>
-                        ` : `
-                            <button class="btn btn-primary" onclick="app.showSettings()">
-                                Edit Profile
-                            </button>
-                        `}
                     </div>
-                </div>
-                <div class="profile-recipes">
-                    <h3>Recent Recipes</h3>
-                    <div id="userRecipes">Loading recipes...</div>
+                    <div class="profile-content">
+                        <div class="profile-section">
+                            <h2><i class="fas fa-coffee"></i> Recipes</h2>
+                            <div id="userRecipes" class="profile-recipes-grid">
+                                <div class="loading-placeholder">Loading recipes...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
 
-            modal.classList.add('show');
-
             // Load user's recipes
-            this.loadUserRecipes(userId);
+            this.loadProfileRecipes(userId);
 
         } catch (error) {
             console.error('Error loading user profile:', error);
-            this.showNotification('Error loading profile', 'error');
+            const feedContent = document.getElementById('feedContent');
+            feedContent.innerHTML = `
+                <div class="error-page">
+                    <button class="back-btn" onclick="app.goBack()">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <div class="error-content">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h2>Error Loading Profile</h2>
+                        <p>Could not load user profile. Please try again.</p>
+                        <button class="btn btn-primary" onclick="app.goBack()">
+                            Go Back
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    goBack() {
+        // Return to previous view or default to home feed
+        this.currentView = 'feed';
+        this.currentProfileId = null;
+        this.feedPage = 0;
+        
+        // Reset navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector('[data-view="feed"]').classList.add('active');
+        
+        this.loadFeed();
+    }
+
+    async loadProfileRecipes(userId) {
+        try {
+            const recipes = await api.getUserRecipes(userId);
+            const container = document.getElementById('userRecipes');
+            
+            if (recipes && recipes.length > 0) {
+                container.innerHTML = '';
+                recipes.forEach(recipe => {
+                    container.appendChild(this.createRecipeCard(recipe));
+                });
+            } else {
+                container.innerHTML = `
+                    <div class="no-recipes">
+                        <i class="fas fa-coffee"></i>
+                        <p>No recipes yet</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading profile recipes:', error);
+            document.getElementById('userRecipes').innerHTML = `
+                <div class="error-message">Error loading recipes</div>
+            `;
         }
     }
 
@@ -1400,40 +1724,78 @@ class WhatYourRecipeApp {
     }
 
     showMyRecipes() {
-        // Filter current view to only show user's own recipes
+        // Close user dropdown
+        this.toggleUserDropdown();
+        
+        // Set current view to my recipes
         this.currentView = 'my-recipes';
         this.feedPage = 0;
+        
+        // Update navigation to show we're in a special view
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Hide trending filter
+        const trendingFilter = document.getElementById('trendingFilterSection');
+        if (trendingFilter) trendingFilter.style.display = 'none';
+        
         this.loadMyRecipesFeed();
     }
 
     async loadMyRecipesFeed() {
         const feedContent = document.getElementById('feedContent');
-        feedContent.innerHTML = '<div class="loading-placeholder">Loading your recipes...</div>';
+        feedContent.innerHTML = `
+            <div class="my-recipes-header">
+                <h2><i class="fas fa-book"></i> My Recipes</h2>
+                <p>All the coffee recipes you've created</p>
+                <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                    <i class="fas fa-plus"></i> Create New Recipe
+                </button>
+            </div>
+            <div class="loading-placeholder">Loading your recipes...</div>
+        `;
 
         try {
             const recipes = await api.getUserRecipes(this.currentUser.id);
             
-            feedContent.innerHTML = '';
+            // Keep the header, update only the results area
+            const headerHtml = `
+                <div class="my-recipes-header">
+                    <h2><i class="fas fa-book"></i> My Recipes</h2>
+                    <p>All the coffee recipes you've created</p>
+                    <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                        <i class="fas fa-plus"></i> Create New Recipe
+                    </button>
+                </div>
+            `;
             
             if (recipes && recipes.length > 0) {
+                feedContent.innerHTML = headerHtml;
                 recipes.forEach(recipe => {
                     feedContent.appendChild(this.createRecipeCard(recipe));
                 });
             } else {
-                feedContent.innerHTML = `
+                feedContent.innerHTML = headerHtml + `
                     <div class="empty-feed">
                         <i class="fas fa-coffee"></i>
                         <h3>No recipes yet</h3>
-                        <p>Start creating your first coffee recipe!</p>
+                        <p>You haven't created any recipes yet. Start sharing your coffee expertise!</p>
                         <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
-                            Create Recipe
+                            <i class="fas fa-plus"></i> Create Your First Recipe
                         </button>
                     </div>
                 `;
             }
         } catch (error) {
             console.error('Error loading my recipes:', error);
-            feedContent.innerHTML = '<div class="error-message">Error loading your recipes.</div>';
+            feedContent.innerHTML = `
+                <div class="my-recipes-header">
+                    <h2><i class="fas fa-book"></i> My Recipes</h2>
+                    <p>All the coffee recipes you've created</p>
+                </div>
+                <div class="error-message">Error loading your recipes. Please try again.</div>
+            `;
         }
     }
 

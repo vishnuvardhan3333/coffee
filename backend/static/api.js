@@ -183,6 +183,14 @@ class APIClient {
         return await this.request(`/activity-feed?limit=${limit}`);
     }
 
+    async getTrendingHashtags(limit = 10, daysBack = 1) {
+        return await this.request(`/trending-hashtags?limit=${limit}&days_back=${daysBack}`);
+    }
+
+    async getRecipesByHashtag(hashtag, sortBy = 'recent', limit = 20) {
+        return await this.request(`/recipes/hashtag/${encodeURIComponent(hashtag)}?sort_by=${sortBy}&limit=${limit}`);
+    }
+
     // Save recipe endpoints
     async saveRecipe(recipeId) {
         return await this.request(`/save-recipe/${recipeId}`, {

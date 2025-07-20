@@ -554,6 +554,165 @@ async def get_user_recipes(user_id: str, page: int = 1, limit: int = 20):
         print(f"Error getting user recipes: {e}")
         return []
 
+# Get intelligent user recommendations 
+@app.get("/recommended-users")
+async def get_recommended_users(limit: int = 5, current_user = Depends(get_current_user)):
+    try:
+        await ensure_user_profile(current_user)
+        
+        # Get users that current user has upvoted recipes from
+        upvoted_recipes = supabase.table("recipe_votes").select("recipe_id").eq("user_id", current_user.id).eq("vote_type", "up").execute()
+        upvoted_recipe_ids = [vote["recipe_id"] for vote in upvoted_recipes.data] if upvoted_recipes.data else []
+        
+        # Get users who created those upvoted recipes
+        similar_users = set()
+        if upvoted_recipe_ids:
+            recipes_result = supabase.table("recipes").select("user_id").in_("id", upvoted_recipe_ids).execute()
+            similar_users = set([recipe["user_id"] for recipe in recipes_result.data]) if recipes_result.data else set()
+        
+        # Get users that current user is already following
+        following_result = supabase.table("follows").select("following_id").eq("follower_id", current_user.id).execute()
+        following_ids = set([follow["following_id"] for follow in following_result.data]) if following_result.data else set()
+        
+        # Add current user to exclusion list
+        following_ids.add(current_user.id)
+        
+        # Get users who have similar voting patterns (liked by people who liked same recipes)
+        recommended_user_ids = set()
+        
+        # Get other users who also upvoted the same recipes
+        if upvoted_recipe_ids:
+            other_votes = supabase.table("recipe_votes").select("user_id").in_("recipe_id", upvoted_recipe_ids).eq("vote_type", "up").neq("user_id", current_user.id).execute()
+            other_user_ids = [vote["user_id"] for vote in other_votes.data] if other_votes.data else []
+            
+            # Count frequency and get most similar users
+            from collections import Counter
+            user_similarity = Counter(other_user_ids)
+            
+            # Get top similar users who aren't already followed
+            for user_id, count in user_similarity.most_common():
+                if user_id not in following_ids and len(recommended_user_ids) < limit * 2:
+                    recommended_user_ids.add(user_id)
+        
+        # Also add some popular users (with most followers) as fallback
+        if len(recommended_user_ids) < limit:
+            popular_users = supabase.table("follows").select("following_id, count(*)", count="exact").group_by("following_id").order("count", desc=True).limit(10).execute()
+            
+            if popular_users.data:
+                for user_stat in popular_users.data:
+                    user_id = user_stat["following_id"]
+                    if user_id not in following_ids and user_id not in recommended_user_ids and len(recommended_user_ids) < limit:
+                        recommended_user_ids.add(user_id)
+        
+        # Get user profiles for recommendations
+        if recommended_user_ids:
+            users_result = supabase.table("profiles").select("*").in_("id", list(recommended_user_ids)).limit(limit).execute()
+            return users_result.data or []
+        else:
+            # Fallback: get some random active users
+            random_users = supabase.table("profiles").select("*").not_.in_("id", list(following_ids)).limit(limit).execute()
+            return random_users.data or []
+            
+    except Exception as e:
+        print(f"Error getting recommended users: {e}")
+        # Fallback: return some users excluding those already followed
+        try:
+            following_result = supabase.table("follows").select("following_id").eq("follower_id", current_user.id).execute()
+            following_ids = [follow["following_id"] for follow in following_result.data] if following_result.data else []
+            following_ids.append(current_user.id)  # Exclude current user
+            
+            fallback_users = supabase.table("profiles").select("*").not_.in_("id", following_ids).limit(limit).execute()
+            return fallback_users.data or []
+        except:
+            return []
+
+# Get activity feed for current user
+@app.get("/activity-feed")
+async def get_activity_feed(limit: int = 10, current_user = Depends(get_current_user)):
+    try:
+        await ensure_user_profile(current_user)
+        
+        # Get activities where current user is the target (people interacting with their content)
+        # OR activities from people they follow
+        
+        # Get users that current user follows
+        following_result = supabase.table("follows").select("following_id").eq("follower_id", current_user.id).execute()
+        following_ids = [follow["following_id"] for follow in following_result.data] if following_result.data else []
+        
+        # Get activities where:
+        # 1. Target user is current user (people liking their recipes, following them)
+        # 2. OR user is someone they follow (recipe creations)
+        
+        query_conditions = []
+        
+        # Activities targeting current user
+        query_conditions.append(f"target_user_id.eq.{current_user.id}")
+        
+        # Activities from followed users (recipe creations, etc.)
+        if following_ids:
+            user_conditions = ",".join([f"user_id.eq.{uid}" for uid in following_ids])
+            query_conditions.append(f"or({user_conditions})")
+        
+        # Combine conditions
+        final_condition = ",".join(query_conditions)
+        
+        result = supabase.table("activities").select("""
+            *,
+            user_profile:profiles!activities_user_id_fkey(id, username, full_name, avatar_url),
+            target_profile:profiles!activities_target_user_id_fkey(id, username, full_name, avatar_url),
+            recipe:recipes(id, recipe_name)
+        """).or_(final_condition).order("created_at", desc=True).limit(limit).execute()
+        
+        return result.data or []
+        
+    except Exception as e:
+        print(f"Error getting activity feed: {e}")
+        return []
+
+# Get trending hashtags
+@app.get("/trending-hashtags")
+async def get_trending_hashtags_endpoint(limit: int = 10, days_back: int = 1):
+    try:
+        result = supabase.rpc('get_trending_hashtags', {
+            'limit_count': limit,
+            'days_back': days_back
+        }).execute()
+        return result.data or []
+    except Exception as e:
+        print(f"Error getting trending hashtags: {e}")
+        # Fallback: get some hashtags from recent recipes
+        try:
+            recent_hashtags = supabase.table("hashtags").select("*").order("last_used", desc=True).limit(limit).execute()
+            return recent_hashtags.data or []
+        except:
+            return []
+
+# Get recipes by hashtag
+@app.get("/recipes/hashtag/{hashtag}")
+async def get_recipes_by_hashtag_endpoint(hashtag: str, sort_by: str = "recent", limit: int = 20):
+    try:
+        result = supabase.rpc('get_recipes_by_hashtag', {
+            'hashtag_name': hashtag,
+            'sort_by': sort_by,
+            'limit_count': limit
+        }).execute()
+        
+        # Enhance with profile information
+        if result.data:
+            recipe_ids = [recipe["recipe_id"] for recipe in result.data]
+            recipes_with_profiles = supabase.table("recipes").select("""
+                *, 
+                profiles!recipes_user_id_fkey(id, username, full_name, avatar_url),
+                recipe_votes(vote_type, user_id)
+            """).in_("id", recipe_ids).execute()
+            
+            return recipes_with_profiles.data or []
+        
+        return []
+    except Exception as e:
+        print(f"Error getting recipes by hashtag: {e}")
+        return []
+
 # Serve the frontend at root
 @app.get("/")
 @app.head("/")
