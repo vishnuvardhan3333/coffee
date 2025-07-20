@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Recipe Creator</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-coffee"></i>
+                <h1>Coffee Recipe Creator</h1>
+            </div>
+            <p class="subtitle">Create and customize your perfect coffee recipe</p>
+        </header>
+
+        <main class="main-content">
+            <div class="recipe-form-container">
+                <form id="recipeForm" class="recipe-form">
+                    <div class="form-mode-toggle">
+                        <button type="button" id="basicModeBtn" class="mode-btn active">
+                            <i class="fas fa-coffee"></i> Basic Mode
+                        </button>
+                        <button type="button" id="proModeBtn" class="mode-btn">
+                            <i class="fas fa-cogs"></i> Professional Mode
+                        </button>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h2><i class="fas fa-tag"></i> Recipe Details</h2>
+                        <div class="form-group">
+                            <label for="recipeName">Recipe Name</label>
+                            <input type="text" id="recipeName" name="recipeName" placeholder="My Perfect Coffee" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" placeholder="Describe your coffee recipe..." rows="3" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2><i class="fas fa-seedling"></i> Bean Information</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="beanVariety">Bean Variety</label>
+                                <select id="beanVariety" name="beanVariety">
+                                    <option value="">Select variety</option>
+                                    <option value="arabica">Arabica</option>
+                                    <option value="robusta">Robusta</option>
+                                    <option value="sln">SLN (Selection 9)</option>
+                                    <option value="sl95">SL95</option>
+                                    <option value="sl90">SL90</option>
+                                    <option value="peaberry">Peaberry</option>
+                                    <option value="bourbon">Bourbon</option>
+                                    <option value="typica">Typica</option>
+                                    <option value="geisha">Geisha</option>
+                                    <option value="caturra">Caturra</option>
+                                    <option value="catuai">Catuai</option>
+                                    <option value="pacamara">Pacamara</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="beanRegion">Bean Region</label>
+                                <select id="beanRegion" name="beanRegion">
+                                    <option value="">Select region</option>
+                                    <optgroup label="Africa">
+                                        <option value="ethiopia">Ethiopia</option>
+                                        <option value="kenya">Kenya</option>
+                                        <option value="rwanda">Rwanda</option>
+                                        <option value="burundi">Burundi</option>
+                                        <option value="tanzania">Tanzania</option>
+                                        <option value="uganda">Uganda</option>
+                                        <option value="malawi">Malawi</option>
+                                        <option value="zambia">Zambia</option>
+                                        <option value="cameroon">Cameroon</option>
+                                        <option value="ivory-coast">Ivory Coast</option>
+                                    </optgroup>
+                                    <optgroup label="Central & South America">
+                                        <option value="colombia">Colombia</option>
+                                        <option value="brazil">Brazil</option>
+                                        <option value="guatemala">Guatemala</option>
+                                        <option value="costa-rica">Costa Rica</option>
+                                        <option value="panama">Panama</option>
+                                        <option value="honduras">Honduras</option>
+                                        <option value="peru">Peru</option>
+                                        <option value="nicaragua">Nicaragua</option>
+                                        <option value="el-salvador">El Salvador</option>
+                                        <option value="bolivia">Bolivia</option>
+                                        <option value="ecuador">Ecuador</option>
+                                        <option value="venezuela">Venezuela</option>
+                                        <option value="mexico">Mexico</option>
+                                        <option value="jamaica">Jamaica</option>
+                                        <option value="dominican-republic">Dominican Republic</option>
+                                        <option value="puerto-rico">Puerto Rico</option>
+                                        <option value="cuba">Cuba</option>
+                                    </optgroup>
+                                    <optgroup label="Asia & Pacific">
+                                        <option value="india">India</option>
+                                        <option value="indonesia">Indonesia</option>
+                                        <option value="vietnam">Vietnam</option>
+                                        <option value="thailand">Thailand</option>
+                                        <option value="myanmar">Myanmar</option>
+                                        <option value="laos">Laos</option>
+                                        <option value="philippines">Philippines</option>
+                                        <option value="papua-new-guinea">Papua New Guinea</option>
+                                        <option value="china">China</option>
+                                        <option value="nepal">Nepal</option>
+                                        <option value="taiwan">Taiwan</option>
+                                        <option value="hawaii">Hawaii</option>
+                                        <option value="australia">Australia</option>
+                                    </optgroup>
+                                    <optgroup label="Middle East">
+                                        <option value="yemen">Yemen</option>
+                                        <option value="saudi-arabia">Saudi Arabia</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="form-group pro-field" id="indiaEstateGroup" style="display: none;">
+                                <label for="indiaEstate">Indian Coffee Estate</label>
+                                <select id="indiaEstate" name="indiaEstate">
+                                    <option value="">Select estate</option>
+                                    <optgroup label="Karnataka - Coorg/Kodagu">
+                                        <option value="coorg-clements">Coorg Clements Estate</option>
+                                        <option value="silver-oak">Silver Oak Estate</option>
+                                        <option value="rainbow-roost">Rainbow Roost Estate</option>
+                                        <option value="golden-mist">Golden Mist Estate</option>
+                                        <option value="estate-57">Estate 57</option>
+                                        <option value="badra-estate">Badra Estate</option>
+                                        <option value="kerehaklu">Kerehaklu Estate</option>
+                                        <option value="ratnagiri">Ratnagiri Estate</option>
+                                        <option value="riverdale">Riverdale Estate</option>
+                                        <option value="kuttaiah">Kuttaiah Estate</option>
+                                        <option value="balmaadi">Balmaadi Estate</option>
+                                        <option value="silver-green">Silver Green Estate</option>
+                                        <option value="pollibetta">Pollibetta Estate</option>
+                                        <option value="poomaale">Poomaale Estate</option>
+                                        <option value="ainmane">Ainmane Estate</option>
+                                        <option value="big-foot">Big Foot Estate</option>
+                                        <option value="highland">Highland Estate</option>
+                                        <option value="mojo-plantation">Mojo Plantation</option>
+                                        <option value="magnolia">Magnolia Estate</option>
+                                        <option value="bee-hive">Bee Hive Estate</option>
+                                        <option value="cherry-bean">Cherry Bean Estate</option>
+                                        <option value="cottage-hills">Cottage Hills Estate</option>
+                                        <option value="devarapura">Devarapura Estate</option>
+                                        <option value="glenlorna">Glenlorna Estate</option>
+                                        <option value="honey-valley">Honey Valley Estate</option>
+                                        <option value="kadamane">Kadamane Estate</option>
+                                        <option value="kalledevarapura">Kalledevarapura Estate</option>
+                                        <option value="karadykan">Karadykan Estate</option>
+                                        <option value="kettimani">Kettimani Estate</option>
+                                        <option value="malabar-estates">Malabar Estates</option>
+                                        <option value="muddy-boots">Muddy Boots Estate</option>
+                                        <option value="nelliyampathy">Nelliyampathy Estate</option>
+                                        <option value="orange-county">Orange County Estate</option>
+                                        <option value="panduranga">Panduranga Estate</option>
+                                        <option value="quirky-estate">Quirky Estate</option>
+                                        <option value="rainbow-hills">Rainbow Hills Estate</option>
+                                        <option value="silver-hills">Silver Hills Estate</option>
+                                        <option value="tamara-coorg">Tamara Coorg Estate</option>
+                                        <option value="windflower">Windflower Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Karnataka - Chikmagalur">
+                                        <option value="malnad-coffee">Malnad Coffee Estate</option>
+                                        <option value="arehalli">Arehalli Estate</option>
+                                        <option value="baba-budan">Baba Budan Estate</option>
+                                        <option value="chandragiri">Chandragiri Estate</option>
+                                        <option value="java-rain">Java Rain Estate</option>
+                                        <option value="koppa-coffee">Koppa Coffee Estate</option>
+                                        <option value="mullayanagiri">Mullayanagiri Estate</option>
+                                        <option value="planters-choice">Planters Choice Estate</option>
+                                        <option value="satya-coffee">Satya Coffee Estate</option>
+                                        <option value="sublime-house">Sublime House Coffee</option>
+                                        <option value="coffee-barn">Coffee Barn Estate</option>
+                                        <option value="devrais">Devrais Estate</option>
+                                        <option value="estate-kopi">Estate Kopi</option>
+                                        <option value="flying-squirrel">Flying Squirrel Estate</option>
+                                        <option value="green-bean">Green Bean Estate</option>
+                                        <option value="hills-coffee">Hills Coffee Estate</option>
+                                        <option value="india-estates">India Estates Company</option>
+                                        <option value="kadur-estate">Kadur Estate</option>
+                                        <option value="lingadahalli">Lingadahalli Estate</option>
+                                        <option value="misty-valley">Misty Valley Estate</option>
+                                        <option value="mysore-coffee">Mysore Coffee Estate</option>
+                                        <option value="nuggets-high">Nuggets High Estate</option>
+                                        <option value="peak-coffee">Peak Coffee Estate</option>
+                                        <option value="ratnagiri-estate">Ratnagiri Bison Estate</option>
+                                        <option value="srinivasa">Srinivasa Estate</option>
+                                        <option value="vishnu-coffee">Vishnu Coffee Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Karnataka - Hassan">
+                                        <option value="tata-coffee">Tata Coffee Plantations</option>
+                                        <option value="coorg-consolidated">Coorg Consolidated Commodities</option>
+                                        <option value="baby-betta">Baby Betta Estate</option>
+                                        <option value="ballur">Ballur Estate</option>
+                                        <option value="craigmore">Craigmore Estate</option>
+                                        <option value="doddengudda">Doddengudda Estate</option>
+                                        <option value="ganeshgudi">Ganeshgudi Estate</option>
+                                        <option value="hanumangundi">Hanumangundi Estate</option>
+                                        <option value="kenilworth">Kenilworth Estate</option>
+                                        <option value="lakeview">Lakeview Estate</option>
+                                        <option value="muthodi">Muthodi Estate</option>
+                                        <option value="naganahalli">Naganahalli Estate</option>
+                                        <option value="royal-estates">Royal Estates</option>
+                                        <option value="sakleshpura">Sakleshpura Estate</option>
+                                        <option value="yennehole">Yennehole Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Kerala - Wayanad">
+                                        <option value="wayanaad">Wayanad Estates</option>
+                                        <option value="eight-degree">Eight Degree Coffee</option>
+                                        <option value="velonie">Velonie Estate</option>
+                                        <option value="harley">Harley Estate</option>
+                                        <option value="bamboo-village">Bamboo Village Estate</option>
+                                        <option value="coffeeberry">Coffeeberry Estate</option>
+                                        <option value="green-gate">Green Gate Estate</option>
+                                        <option value="krishnagiri">Krishnagiri Estate</option>
+                                        <option value="meppadi">Meppadi Estate</option>
+                                        <option value="pulpally">Pulpally Estate</option>
+                                        <option value="rippon">Rippon Estate</option>
+                                        <option value="sulthan-bathery">Sulthan Bathery Estate</option>
+                                        <option value="wayanad-coffee">Wayanad Coffee Company</option>
+                                        <option value="western-ghats">Western Ghats Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Kerala - Idukki">
+                                        <option value="idukki">Idukki Coffee Estates</option>
+                                        <option value="sethuraman">Sethuraman Estate</option>
+                                        <option value="kalledevarapura">Kalledevarapura Estate</option>
+                                        <option value="cardamom-county">Cardamom County Estate</option>
+                                        <option value="devikulam">Devikulam Estate</option>
+                                        <option value="highrange">Highrange Estate</option>
+                                        <option value="kannan-devan">Kannan Devan Hills</option>
+                                        <option value="munnar-coffee">Munnar Coffee Estate</option>
+                                        <option value="periyar">Periyar Estate</option>
+                                        <option value="thekkady">Thekkady Estate</option>
+                                        <option value="vagamon">Vagamon Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Kerala - Palakkad">
+                                        <option value="nelliampathi">Nelliampathi Hills</option>
+                                        <option value="attappady">Attappady Estate</option>
+                                        <option value="malampuzha">Malampuzha Estate</option>
+                                        <option value="parambikulam">Parambikulam Estate</option>
+                                        <option value="silent-valley">Silent Valley Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Tamil Nadu - Nilgiris">
+                                        <option value="blue-bison">Blue Bison Estate</option>
+                                        <option value="tiger-hill">Tiger Hill Estate</option>
+                                        <option value="kotagiri">Kotagiri Estate</option>
+                                        <option value="nullore">Nullore Estate</option>
+                                        <option value="badaga-coffee">Badaga Coffee Estate</option>
+                                        <option value="coonoor">Coonoor Estate</option>
+                                        <option value="ketti-valley">Ketti Valley Estate</option>
+                                        <option value="ooty-coffee">Ooty Coffee Estate</option>
+                                        <option value="avalanche">Avalanche Estate</option>
+                                        <option value="emerald">Emerald Estate</option>
+                                        <option value="fernhill">Fernhill Estate</option>
+                                        <option value="glenmorgan">Glenmorgan Estate</option>
+                                        <option value="highfield">Highfield Estate</option>
+                                        <option value="kundah">Kundah Estate</option>
+                                        <option value="lovedale">Lovedale Estate</option>
+                                        <option value="meadow-bank">Meadow Bank Estate</option>
+                                        <option value="snowdon">Snowdon Estate</option>
+                                        <option value="wellington">Wellington Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Tamil Nadu - Shevaroys">
+                                        <option value="shevaroys">Shevaroys Coffee Estate</option>
+                                        <option value="yercaud">Yercaud Coffee Estate</option>
+                                        <option value="servarayan">Servarayan Estate</option>
+                                        <option value="salem-coffee">Salem Coffee Estate</option>
+                                        <option value="kolli-hills">Kolli Hills Estate</option>
+                                        <option value="pachaimalai">Pachaimalai Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Tamil Nadu - Anamalai">
+                                        <option value="kodaikanal">Kodaikanal Estate</option>
+                                        <option value="anamalai">Anamalai Estate</option>
+                                        <option value="top-station">Top Station Estate</option>
+                                        <option value="vattakanal">Vattakanal Estate</option>
+                                        <option value="berijam">Berijam Estate</option>
+                                        <option value="dolphin-nose">Dolphin Nose Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Andhra Pradesh & Telangana">
+                                        <option value="araku-valley">Araku Valley Coffee</option>
+                                        <option value="lambasingi">Lambasingi Estate</option>
+                                        <option value="padmapuram">Padmapuram Gardens</option>
+                                        <option value="ananthagiri">Ananthagiri Hills</option>
+                                        <option value="borra-caves">Borra Caves Estate</option>
+                                        <option value="chintapalli">Chintapalli Estate</option>
+                                        <option value="dumbriguda">Dumbriguda Estate</option>
+                                        <option value="galipatam">Galipatam Estate</option>
+                                        <option value="hukumpeta">Hukumpeta Estate</option>
+                                        <option value="koraput-valley">Koraput Valley Estate</option>
+                                        <option value="maredumilli">Maredumilli Estate</option>
+                                        <option value="papikondalu">Papikondalu Estate</option>
+                                        <option value="rampachodavaram">Rampachodavaram Estate</option>
+                                        <option value="tribal-coffee">Tribal Coffee Estate</option>
+                                        <option value="visakhapatnam">Visakhapatnam Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Odisha">
+                                        <option value="koraput">Koraput Coffee</option>
+                                        <option value="rayagada">Rayagada Estate</option>
+                                        <option value="kalahandi">Kalahandi Estate</option>
+                                        <option value="kandhamal">Kandhamal Estate</option>
+                                        <option value="gajapati">Gajapati Estate</option>
+                                        <option value="nabarangpur">Nabarangpur Estate</option>
+                                        <option value="malkangiri">Malkangiri Estate</option>
+                                        <option value="daringbadi">Daringbadi Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Meghalaya">
+                                        <option value="ri-bhoi">Ri Bhoi Coffee</option>
+                                        <option value="west-khasi">West Khasi Hills</option>
+                                        <option value="east-khasi">East Khasi Hills</option>
+                                        <option value="jaintia-hills">Jaintia Hills</option>
+                                        <option value="garo-hills">Garo Hills Estate</option>
+                                        <option value="shillong">Shillong Estate</option>
+                                        <option value="cherrapunji">Cherrapunji Estate</option>
+                                        <option value="dawki">Dawki Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Assam">
+                                        <option value="karbi-anglong">Karbi Anglong Estate</option>
+                                        <option value="north-cachar">North Cachar Hills</option>
+                                        <option value="cachar">Cachar Estate</option>
+                                        <option value="hailakandi">Hailakandi Estate</option>
+                                        <option value="karimganj">Karimganj Estate</option>
+                                        <option value="barak-valley">Barak Valley Coffee</option>
+                                    </optgroup>
+                                    <optgroup label="Nagaland">
+                                        <option value="kohima">Kohima Coffee Estate</option>
+                                        <option value="dimapur">Dimapur Estate</option>
+                                        <option value="mokokchung">Mokokchung Estate</option>
+                                        <option value="tuensang">Tuensang Estate</option>
+                                        <option value="wokha">Wokha Estate</option>
+                                        <option value="zunheboto">Zunheboto Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Manipur">
+                                        <option value="ukhrul">Ukhrul Coffee Estate</option>
+                                        <option value="senapati">Senapati Estate</option>
+                                        <option value="tamenglong">Tamenglong Estate</option>
+                                        <option value="chandel">Chandel Estate</option>
+                                        <option value="churachandpur">Churachandpur Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Arunachal Pradesh">
+                                        <option value="west-kameng">West Kameng Estate</option>
+                                        <option value="east-kameng">East Kameng Estate</option>
+                                        <option value="papum-pare">Papum Pare Estate</option>
+                                        <option value="lower-subansiri">Lower Subansiri Estate</option>
+                                        <option value="upper-subansiri">Upper Subansiri Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Mizoram">
+                                        <option value="aizawl">Aizawl Coffee Estate</option>
+                                        <option value="champhai">Champhai Estate</option>
+                                        <option value="kolasib">Kolasib Estate</option>
+                                        <option value="mamit">Mamit Estate</option>
+                                        <option value="serchhip">Serchhip Estate</option>
+                                    </optgroup>
+                                    <optgroup label="Tripura">
+                                        <option value="dhalai">Dhalai Coffee Estate</option>
+                                        <option value="north-tripura">North Tripura Estate</option>
+                                        <option value="south-tripura">South Tripura Estate</option>
+                                        <option value="west-tripura">West Tripura Estate</option>
+                                        <option value="unakoti">Unakoti Estate</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group pro-field">
+                            <label for="processingType">Processing Type</label>
+                            <select id="processingType" name="processingType">
+                                <option value="">Select processing</option>
+                                <option value="washed">Washed (Wet Process)</option>
+                                <option value="natural">Natural (Dry Process)</option>
+                                <option value="honey">Honey Process</option>
+                                <option value="semi-washed">Semi-washed</option>
+                                <option value="wet-hulled">Wet Hulled (Giling Basah)</option>
+                                <option value="anaerobic">Anaerobic Fermentation</option>
+                                <option value="carbonic-maceration">Carbonic Maceration</option>
+                                <option value="extended-fermentation">Extended Fermentation</option>
+                                <option value="monsoon-malabar">Monsoon Malabar</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2><i class="fas fa-fire"></i> Roasting Profile</h2>
+                        <div class="form-row">
+                            <div class="form-group pro-field">
+                                <label for="roastType">Roast Type</label>
+                                <select id="roastType" name="roastType">
+                                    <option value="">Select roast type</option>
+                                    <option value="hot-air">Hot Air (Fluid Bed)</option>
+                                    <option value="contact-heat">Contact Heat (Drum)</option>
+                                    <option value="infrared">Infrared</option>
+                                    <option value="hybrid">Hybrid (Air + Drum)</option>
+                                    <option value="pan-roasting">Pan Roasting</option>
+                                    <option value="wood-fire">Wood Fire</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="roastLevel">Roast Level</label>
+                                <select id="roastLevel" name="roastLevel">
+                                    <option value="">Select roast level</option>
+                                    <option value="light">Light Roast</option>
+                                    <option value="medium-light">Medium Light</option>
+                                    <option value="medium">Medium Roast</option>
+                                    <option value="medium-dark">Medium Dark</option>
+                                    <option value="dark">Dark Roast</option>
+                                    <option value="french">French Roast</option>
+                                    <option value="italian">Italian Roast</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group pro-field">
+                            <label for="crackTime">Crack Development</label>
+                            <select id="crackTime" name="crackTime">
+                                <option value="">Select crack development</option>
+                                <option value="pre-first">Pre-First Crack</option>
+                                <option value="first-crack-start">First Crack Start</option>
+                                <option value="first-crack-middle">First Crack Middle</option>
+                                <option value="first-crack-end">First Crack End</option>
+                                <option value="between-cracks">Between First & Second Crack</option>
+                                <option value="second-crack-start">Second Crack Start</option>
+                                <option value="second-crack-middle">Second Crack Middle</option>
+                                <option value="second-crack-end">Second Crack End</option>
+                                <option value="post-second">Post Second Crack</option>
+                            </select>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="roastTime">Total Roast Time (minutes)</label>
+                                <input type="number" id="roastTime" name="roastTime" min="8" max="30" step="0.5" placeholder="12">
+                            </div>
+                            <div class="form-group">
+                                <label for="developmentTime">Development Time (%)</label>
+                                <input type="number" id="developmentTime" name="developmentTime" min="15" max="35" step="1" placeholder="20">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2><i class="fas fa-tint"></i> Brewing Parameters</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="brewMethod">Brew Method</label>
+                                <select id="brewMethod" name="brewMethod">
+                                    <option value="">Select method</option>
+                                    <option value="espresso">Espresso</option>
+                                    <option value="pour-over">Pour Over (V60, Chemex)</option>
+                                    <option value="french-press">French Press</option>
+                                    <option value="aeropress">AeroPress</option>
+                                    <option value="cold-brew">Cold Brew</option>
+                                    <option value="turkish">Turkish Coffee</option>
+                                    <option value="moka-pot">Moka Pot</option>
+                                    <option value="drip-coffee">Drip Coffee</option>
+                                    <option value="siphon">Siphon</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="waterComposition">Water Composition</label>
+                                <select id="waterComposition" name="waterComposition">
+                                    <option value="">Select water type</option>
+                                    <option value="soft">Soft Water (0-75 ppm)</option>
+                                    <option value="moderately-soft">Moderately Soft (75-150 ppm)</option>
+                                    <option value="medium-hard">Medium Hard (150-300 ppm)</option>
+                                    <option value="hard">Hard Water (300+ ppm)</option>
+                                    <option value="distilled">Distilled Water</option>
+                                    <option value="filtered">Filtered Water</option>
+                                    <option value="spring">Spring Water</option>
+                                    <option value="tap">Tap Water</option>
+                                    <option value="custom-mineral">Custom Mineral Content</option>
+                                </select>
+                            </div>
+                            <div class="form-group pro-field">
+                                <label for="grindMicrons">Grind Size (Microns)</label>
+                                <input type="number" id="grindMicrons" name="grindMicrons" min="200" max="2000" step="50" placeholder="800">
+                                <small style="color: var(--text-light); font-size: 0.85rem;">Extra Fine: 200-400μm, Fine: 400-600μm, Medium: 600-1000μm, Coarse: 1000-1400μm</small>
+                            </div>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="tds">TDS - Total Dissolved Solids (ppm)</label>
+                                <input type="number" id="tds" name="tds" min="0" max="1000" step="5" placeholder="150">
+                                <small style="color: var(--text-light); font-size: 0.85rem;">Optimal range: 75-150 ppm for coffee</small>
+                            </div>
+                            <div class="form-group">
+                                <!-- Empty for layout balance -->
+                            </div>
+                        </div>
+                        <div class="mineral-subsection pro-field" style="margin-top: 20px; padding: 15px; background: var(--background); border-radius: 12px; border: 1px solid var(--border);">
+                            <h3 style="font-size: 1.1rem; color: var(--primary-color); margin-bottom: 15px;">
+                                <i class="fas fa-flask"></i> Water Mineral Content (mg/L)
+                            </h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="calcium">Calcium (Ca²⁺)</label>
+                                    <input type="number" id="calcium" name="calcium" min="0" max="200" step="1" placeholder="68">
+                                    <small style="color: var(--text-light); font-size: 0.85rem;">SCA recommended: 17-85 mg/L</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="magnesium">Magnesium (Mg²⁺)</label>
+                                    <input type="number" id="magnesium" name="magnesium" min="0" max="100" step="1" placeholder="40">
+                                    <small style="color: var(--text-light); font-size: 0.85rem;">SCA recommended: 6.8-40 mg/L</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="potassium">Potassium (K⁺)</label>
+                                    <input type="number" id="potassium" name="potassium" min="0" max="50" step="0.5" placeholder="10">
+                                    <small style="color: var(--text-light); font-size: 0.85rem;">Typical range: 5-15 mg/L</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sodium">Sodium (Na⁺)</label>
+                                    <input type="number" id="sodium" name="sodium" min="0" max="50" step="0.5" placeholder="10">
+                                    <small style="color: var(--text-light); font-size: 0.85rem;">Typical range: 5-20 mg/L</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="coffeeAmount">Coffee Amount (grams)</label>
+                                <input type="number" id="coffeeAmount" name="coffeeAmount" min="10" max="100" step="1" placeholder="18">
+                            </div>
+                            <div class="form-group">
+                                <label for="waterAmount">Water Amount (ml)</label>
+                                <input type="number" id="waterAmount" name="waterAmount" min="100" max="1000" step="10" placeholder="300">
+                            </div>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="waterTemp">Water Temperature (°C)</label>
+                                <input type="number" id="waterTemp" name="waterTemp" min="80" max="100" step="1" placeholder="92">
+                            </div>
+                            <div class="form-group">
+                                <label for="brewTime">Brew Time (minutes)</label>
+                                <input type="number" id="brewTime" name="brewTime" min="0.5" max="10" step="0.25" placeholder="2.5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2><i class="fas fa-glass-whiskey"></i> Serving Preferences</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="milkPreference">Milk Preference</label>
+                                <select id="milkPreference" name="milkPreference">
+                                    <option value="">Select preference</option>
+                                    <option value="black">Black (No Milk)</option>
+                                    <option value="whole-milk">Whole Milk</option>
+                                    <option value="2-percent">2% Milk</option>
+                                    <option value="skim-milk">Skim Milk</option>
+                                    <option value="oat-milk">Oat Milk</option>
+                                    <option value="almond-milk">Almond Milk</option>
+                                    <option value="soy-milk">Soy Milk</option>
+                                    <option value="coconut-milk">Coconut Milk</option>
+                                    <option value="heavy-cream">Heavy Cream</option>
+                                    <option value="half-and-half">Half and Half</option>
+                                </select>
+                            </div>
+                            <div class="form-group pro-field">
+                                <label for="servingTemp">Preferred Drinking Temperature</label>
+                                <select id="servingTemp" name="servingTemp">
+                                    <option value="">Select temperature</option>
+                                    <option value="hot">Hot (65-70°C)</option>
+                                    <option value="warm">Warm (55-60°C)</option>
+                                    <option value="room-temp">Room Temperature (20-25°C)</option>
+                                    <option value="cold">Cold (5-10°C)</option>
+                                    <option value="iced">Iced (0-5°C)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="sweetener">Sweetener</label>
+                                <select id="sweetener" name="sweetener">
+                                    <option value="">None</option>
+                                    <option value="sugar">White Sugar</option>
+                                    <option value="brown-sugar">Brown Sugar</option>
+                                    <option value="honey">Honey</option>
+                                    <option value="maple-syrup">Maple Syrup</option>
+                                    <option value="stevia">Stevia</option>
+                                    <option value="agave">Agave</option>
+                                    <option value="artificial">Artificial Sweetener</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="sweetenerQuantity">Sweetener Quantity</label>
+                                <input type="number" id="sweetenerQuantity" name="sweetenerQuantity" min="0" max="50" step="0.5" placeholder="2">
+                                <small style="color: var(--text-light); font-size: 0.85rem;">Amount in grams</small>
+                            </div>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="servingSize">Serving Size (ml)</label>
+                                <input type="number" id="servingSize" name="servingSize" min="30" max="500" step="10" placeholder="200">
+                            </div>
+                            <div class="form-group">
+                                <!-- Empty for layout balance -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section pro-field">
+                        <h2><i class="fas fa-nose"></i> Sensory & Evaluation</h2>
+                        <div class="form-group">
+                            <label for="aromaNotes">Aroma Notes</label>
+                            <textarea id="aromaNotes" name="aromaNotes" placeholder="Describe the smell: floral, fruity, earthy, spicy..." rows="2"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="body">Body</label>
+                                <select id="body" name="body">
+                                    <option value="">Select body</option>
+                                    <option value="light">Light</option>
+                                    <option value="medium-light">Medium Light</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="medium-full">Medium Full</option>
+                                    <option value="full">Full</option>
+                                    <option value="heavy">Heavy</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="acidityType">Acidity Type</label>
+                                <select id="acidityType" name="acidityType">
+                                    <option value="">Select acidity</option>
+                                    <option value="bright">Bright</option>
+                                    <option value="crisp">Crisp</option>
+                                    <option value="tart">Tart</option>
+                                    <option value="tangy">Tangy</option>
+                                    <option value="citric">Citric</option>
+                                    <option value="malic">Malic (Apple-like)</option>
+                                    <option value="phosphoric">Phosphoric</option>
+                                    <option value="mellow">Mellow</option>
+                                    <option value="smooth">Smooth</option>
+                                    <option value="low">Low</option>
+                                    <option value="flat">Flat</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sweetness">Sweetness</label>
+                                <select id="sweetness" name="sweetness">
+                                    <option value="">Select sweetness</option>
+                                    <option value="very-low">Very Low</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium-low">Medium Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="medium-high">Medium High</option>
+                                    <option value="high">High</option>
+                                    <option value="very-high">Very High</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="balance">Balance</label>
+                                <select id="balance" name="balance">
+                                    <option value="">Select balance</option>
+                                    <option value="poor">Poor</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="good">Good</option>
+                                    <option value="very-good">Very Good</option>
+                                    <option value="excellent">Excellent</option>
+                                    <option value="outstanding">Outstanding</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="aftertaste">Aftertaste/Finish</label>
+                            <textarea id="aftertaste" name="aftertaste" placeholder="Describe lingering flavors and finish..." rows="2"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cleanCup">Clean Cup</label>
+                                <select id="cleanCup" name="cleanCup">
+                                    <option value="">Select cleanliness</option>
+                                    <option value="dirty">Dirty</option>
+                                    <option value="slightly-dirty">Slightly Dirty</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="clean">Clean</option>
+                                    <option value="very-clean">Very Clean</option>
+                                    <option value="pristine">Pristine</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="uniformity">Uniformity</label>
+                                <select id="uniformity" name="uniformity">
+                                    <option value="">Select uniformity</option>
+                                    <option value="poor">Poor</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="good">Good</option>
+                                    <option value="very-good">Very Good</option>
+                                    <option value="excellent">Excellent</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cuppingScore">Cupping Score (0-100)</label>
+                                <input type="number" id="cuppingScore" name="cuppingScore" min="0" max="100" step="0.25" placeholder="85.5">
+                                <small style="color: var(--text-light); font-size: 0.85rem;">SCA scoring: 80+ = Specialty Grade</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="cuppingMethod">Cupping Method</label>
+                                <select id="cuppingMethod" name="cuppingMethod">
+                                    <option value="">Select method</option>
+                                    <option value="sca">SCA Standard</option>
+                                    <option value="coe">Cup of Excellence</option>
+                                    <option value="q-grader">Q Grader Protocol</option>
+                                    <option value="informal">Informal Cupping</option>
+                                    <option value="brazilian">Brazilian Method</option>
+                                    <option value="custom">Custom Method</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="defects">Defects & Off-flavors</label>
+                            <textarea id="defects" name="defects" placeholder="Note any defects, off-flavors, or negative attributes..." rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="overallImpression">Overall Impression</label>
+                            <textarea id="overallImpression" name="overallImpression" placeholder="General thoughts and overall assessment..." rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2><i class="fas fa-star"></i> Additional Notes</h2>
+                        <div class="form-group">
+                            <label for="brewingNotes">Brewing Notes & Tips</label>
+                            <textarea id="brewingNotes" name="brewingNotes" placeholder="Special techniques, timing, or observations..." rows="2"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rating">Personal Rating (1-10)</label>
+                                <select id="rating" name="rating" required>
+                                    <option value="">Rate this recipe</option>
+                                    <option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ Perfect (10)</option>
+                                    <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ Excellent (9)</option>
+                                    <option value="8">⭐⭐⭐⭐⭐⭐⭐⭐ Very Good (8)</option>
+                                    <option value="7">⭐⭐⭐⭐⭐⭐⭐ Good (7)</option>
+                                    <option value="6">⭐⭐⭐⭐⭐⭐ Above Average (6)</option>
+                                    <option value="5">⭐⭐⭐⭐⭐ Average (5)</option>
+                                    <option value="4">⭐⭐⭐⭐ Below Average (4)</option>
+                                    <option value="3">⭐⭐⭐ Fair (3)</option>
+                                    <option value="2">⭐⭐ Poor (2)</option>
+                                    <option value="1">⭐ Very Poor (1)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="dateCreated">Date Created</label>
+                                <input type="date" id="dateCreated" name="dateCreated" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create Recipe
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="clearForm">
+                            <i class="fas fa-refresh"></i> Clear Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="recipes-container">
+                <div class="recipes-header">
+                    <h2><i class="fas fa-book"></i> My Coffee Recipes</h2>
+                    <div class="recipes-actions">
+                        <div class="recipe-mode-toggle">
+                            <button type="button" id="recipeBasicModeBtn" class="recipe-mode-btn active">
+                                <i class="fas fa-coffee"></i> Basic
+                            </button>
+                            <button type="button" id="recipeProModeBtn" class="recipe-mode-btn">
+                                <i class="fas fa-cogs"></i> Pro
+                            </button>
+                        </div>
+                        <button class="btn btn-outline" id="exportRecipes">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button class="btn btn-outline" id="importRecipes">
+                            <i class="fas fa-upload"></i> Import
+                        </button>
+                        <input type="file" id="importFile" accept=".json" style="display: none;">
+                    </div>
+                </div>
+                <div class="recipes-list" id="recipesList">
+                    <div class="no-recipes">
+                        <i class="fas fa-coffee"></i>
+                        <p>No recipes created yet. Start by creating your first coffee recipe!</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Recipe Details Modal -->
+        <div id="recipeModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalRecipeTitle">Recipe Details</h2>
+                    <span class="close" onclick="app.closeRecipeModal()">&times;</span>
+                </div>
+                <div class="modal-body" id="modalRecipeContent">
+                    <!-- Recipe details will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
