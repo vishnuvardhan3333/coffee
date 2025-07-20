@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, EmailStr
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, EmailStr, ValidationError
 from typing import Optional, List
 import os
 from datetime import datetime, timedelta
@@ -20,6 +22,30 @@ app = FastAPI(
     description="Social media platform for coffee recipe sharing",
     version="1.0.0"
 )
+
+# Add validation error handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"Validation error on {request.method} {request.url}")
+    print(f"Validation errors: {exc.errors()}")
+    
+    # Try to get request body safely
+    try:
+        body = await request.body()
+        print(f"Request body: {body}")
+        body_str = body.decode('utf-8') if body else "Empty body"
+    except Exception as e:
+        print(f"Could not read request body: {e}")
+        body_str = "Could not read body"
+    
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": exc.errors(),
+            "body": body_str,
+            "url": str(request.url)
+        }
+    )
 
 # Mount static files from frontend directory
 # Serve CSS, JS, and other static files at root level
@@ -279,11 +305,15 @@ async def search_users(query: str, limit: int = 10):
 @app.post("/recipes")
 async def create_recipe(recipe_data: Recipe, current_user = Depends(get_current_user)):
     try:
+        # First, let's log the raw recipe data received
+        print(f"Raw recipe data received: {recipe_data}")
+        
         recipe_dict = recipe_data.dict()
         recipe_dict["user_id"] = current_user.id
         
         # Log the data being sent for debugging
-        print(f"Creating recipe with data: {recipe_dict}")
+        print(f"Creating recipe with data keys: {list(recipe_dict.keys())}")
+        print(f"Recipe data values: {recipe_dict}")
         
         result = supabase.table("recipes").insert(recipe_dict).execute()
         
@@ -293,7 +323,7 @@ async def create_recipe(recipe_data: Recipe, current_user = Depends(get_current_
             raise HTTPException(status_code=400, detail="Failed to create recipe")
     except Exception as e:
         print(f"Error creating recipe: {e}")
-        print(f"Recipe data: {recipe_dict}")
+        print(f"Recipe data that failed: {recipe_dict if 'recipe_dict' in locals() else 'Not available'}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/recipes")
