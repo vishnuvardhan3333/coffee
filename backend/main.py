@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 import os
@@ -18,6 +20,9 @@ app = FastAPI(
     description="Social media platform for coffee recipe sharing",
     version="1.0.0"
 )
+
+# Mount static files from frontend directory
+app.mount("/static", StaticFiles(directory="../frontend"), name="static")
 
 # CORS middleware - Allow frontend communication
 app.add_middleware(
@@ -355,6 +360,11 @@ async def follow_user(user_id: str, current_user = Depends(get_current_user)):
             
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# Serve the frontend at root
+@app.get("/")
+async def serve_frontend():
+    return FileResponse("../frontend/index.html")
 
 # Health check
 @app.get("/health")
