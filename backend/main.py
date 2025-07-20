@@ -253,34 +253,43 @@ async def resend_confirmation(email: EmailStr):
         raise HTTPException(status_code=400, detail=str(e))
 
 # User endpoints
-@app.get("/users/profile")
-async def get_user_profile(current_user = Depends(get_current_user)):
+async def ensure_user_profile(current_user):
+    """Ensure a profile exists for the current user, create if missing"""
     try:
-        print(f"Getting profile for user: {current_user.id}")
+        # Try to get existing profile
         result = supabase.table("profiles").select("*").eq("id", current_user.id).single().execute()
-        print(f"Profile result: {result}")
         if result.data:
             return result.data
-        else:
-            # If no profile exists, create a basic one
-            profile_data = {
-                "id": current_user.id,
-                "username": current_user.user_metadata.get("username", ""),
-                "full_name": current_user.user_metadata.get("full_name", ""),
-                "email": current_user.email
-            }
-            create_result = supabase.table("profiles").insert(profile_data).execute()
-            print(f"Created profile: {create_result}")
-            return profile_data
     except Exception as e:
-        print(f"Profile error: {e}")
-        # Return basic user info from auth if profile table doesn't exist
-        return {
+        print(f"Profile not found: {e}")
+    
+    # Create profile if it doesn't exist
+    try:
+        profile_data = {
             "id": current_user.id,
-            "username": current_user.user_metadata.get("username", ""),
+            "username": current_user.user_metadata.get("username", f"user_{current_user.id[:8]}"),
             "full_name": current_user.user_metadata.get("full_name", ""),
             "email": current_user.email
         }
+        create_result = supabase.table("profiles").insert(profile_data).execute()
+        print(f"Created new profile: {create_result}")
+        if create_result.data:
+            return create_result.data[0]
+        else:
+            return profile_data
+    except Exception as e:
+        print(f"Error creating profile: {e}")
+        # Return basic profile data even if creation fails
+        return {
+            "id": current_user.id,
+            "username": current_user.user_metadata.get("username", f"user_{current_user.id[:8]}"),
+            "full_name": current_user.user_metadata.get("full_name", ""),
+            "email": current_user.email
+        }
+
+@app.get("/users/profile")
+async def get_user_profile(current_user = Depends(get_current_user)):
+    return await ensure_user_profile(current_user)
 
 @app.get("/users/{user_id}")
 async def get_user_by_id(user_id: str):
@@ -305,25 +314,24 @@ async def search_users(query: str, limit: int = 10):
 @app.post("/recipes")
 async def create_recipe(recipe_data: Recipe, current_user = Depends(get_current_user)):
     try:
-        # First, let's log the raw recipe data received
-        print(f"Raw recipe data received: {recipe_data}")
+        # Ensure user profile exists before creating recipe
+        await ensure_user_profile(current_user)
         
-        recipe_dict = recipe_data.dict()
+        # Convert to dict using model_dump (Pydantic v2 method)
+        recipe_dict = recipe_data.model_dump()
         recipe_dict["user_id"] = current_user.id
         
-        # Log the data being sent for debugging
-        print(f"Creating recipe with data keys: {list(recipe_dict.keys())}")
-        print(f"Recipe data values: {recipe_dict}")
+        print(f"Creating recipe: {recipe_data.recipe_name}")
         
         result = supabase.table("recipes").insert(recipe_dict).execute()
         
         if result.data:
+            print(f"Recipe created successfully: {result.data[0]['id']}")
             return result.data[0]
         else:
             raise HTTPException(status_code=400, detail="Failed to create recipe")
     except Exception as e:
         print(f"Error creating recipe: {e}")
-        print(f"Recipe data that failed: {recipe_dict if 'recipe_dict' in locals() else 'Not available'}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/recipes")
