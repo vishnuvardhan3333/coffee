@@ -381,11 +381,39 @@ async def follow_user(user_id: str, current_user = Depends(get_current_user)):
 async def serve_frontend():
     return FileResponse("static/index.html")
 
+# Environment detection
+def get_environment():
+    return "production" if os.getenv("PORT") else "development"
+
 # Health check
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    return {
+        "status": "healthy", 
+        "environment": get_environment(),
+        "timestamp": datetime.now().isoformat()
+    }
+
+# Environment info endpoint
+@app.get("/env")
+async def environment_info():
+    return {
+        "environment": get_environment(),
+        "api_url": f"http://localhost:{os.getenv('PORT', 8000)}" if get_environment() == "development" else "https://coffee-m9ux.onrender.com",
+        "port": os.getenv("PORT", 8000)
+    }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000))) 
+    port = int(os.getenv("PORT", 8000))
+    environment = get_environment()
+    
+    print(f"\n🚀 What'sYourRecipe API Starting...")
+    print(f"📍 Environment: {environment.upper()}")
+    print(f"🌐 Server: http://localhost:{port}")
+    print(f"📱 Frontend: http://localhost:{port}")
+    print(f"🔗 API Docs: http://localhost:{port}/docs")
+    print(f"❤️  Health Check: http://localhost:{port}/health")
+    print("="*50)
+    
+    uvicorn.run(app, host="0.0.0.0", port=port) 

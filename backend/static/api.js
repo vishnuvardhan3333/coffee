@@ -1,6 +1,14 @@
-// API Configuration
-const API_BASE_URL = 'https://coffee-m9ux.onrender.com'; // Your deployed backend URL
-// For development: const API_BASE_URL = 'http://localhost:8000';
+// API Configuration - Auto-detect environment
+const isLocalDevelopment = window.location.hostname === 'localhost' || 
+                          window.location.hostname === '127.0.0.1' || 
+                          window.location.hostname === '0.0.0.0';
+
+const API_BASE_URL = isLocalDevelopment 
+    ? 'http://localhost:8000'  // Local development
+    : 'https://coffee-m9ux.onrender.com'; // Production deployment
+
+console.log(`Environment: ${isLocalDevelopment ? 'Local Development' : 'Production'}`);
+console.log(`API Base URL: ${API_BASE_URL}`);
 
 class APIClient {
     constructor() {

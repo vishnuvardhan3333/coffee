@@ -32,10 +32,17 @@ class WhatYourRecipeApp {
 
     async checkAPIHealth() {
         try {
-            await api.healthCheck();
-            console.log('Backend API is healthy');
+            const health = await api.healthCheck();
+            console.log(`✅ Backend API is healthy`);
+            console.log(`📍 Environment: ${health.environment || 'unknown'}`);
+            console.log(`🕐 Server Time: ${health.timestamp}`);
+            
+            // Show environment indicator in development
+            if (health.environment === 'development') {
+                this.showNotification('Running in Development Mode', 'info');
+            }
         } catch (error) {
-            console.error('Backend API is not available:', error);
+            console.error('❌ Backend API is not available:', error);
             this.showNotification('Backend server is not available. Please try again later.', 'error');
         }
     }
