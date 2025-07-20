@@ -659,11 +659,11 @@ class WhatYourRecipeApp {
                     <div class="avatar">
                         ${recipe.profiles?.avatar_url 
                             ? `<img src="${recipe.profiles.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
-                            : (recipe.profiles?.full_name?.charAt(0)?.toUpperCase() || recipe.profiles?.username?.charAt(0)?.toUpperCase() || 'U')
+                            : (recipe.profiles?.username?.charAt(0)?.toUpperCase() || recipe.profiles?.full_name?.charAt(0)?.toUpperCase() || 'U')
                         }
                     </div>
                     <div class="info">
-                        <div class="name">${recipe.profiles?.full_name || recipe.profiles?.username || 'Anonymous Chef'}</div>
+                        <div class="name">${recipe.profiles?.username || recipe.profiles?.full_name || 'Anonymous Chef'}</div>
                         <div class="time">${formatDate(recipe.created_at)}</div>
                     </div>
                 </div>
@@ -1247,7 +1247,7 @@ class WhatYourRecipeApp {
             <div class="activity-item">
                                     <div class="icon heart"><i class="fas fa-heart"></i></div>
                                     <div class="content">
-                                        <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
+                                        <strong>${activity.user_profile?.username || activity.user_profile?.full_name}</strong> 
                                         liked your recipe 
                                         <strong>${activity.recipe?.recipe_name}</strong>
                                         <div class="activity-time">${timeAgo}</div>
@@ -1259,7 +1259,7 @@ class WhatYourRecipeApp {
             <div class="activity-item">
                                     <div class="icon follow"><i class="fas fa-user-plus"></i></div>
                                     <div class="content">
-                                        <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
+                                        <strong>${activity.user_profile?.username || activity.user_profile?.full_name}</strong> 
                                         started following you
                                         <div class="activity-time">${timeAgo}</div>
                                     </div>
@@ -1270,7 +1270,7 @@ class WhatYourRecipeApp {
                                 <div class="activity-item">
                                     <div class="icon recipe"><i class="fas fa-coffee"></i></div>
                                     <div class="content">
-                                        <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
+                                        <strong>${activity.user_profile?.username || activity.user_profile?.full_name}</strong> 
                                         created a new recipe: 
                                         <strong>${activity.content}</strong>
                                         <div class="activity-time">${timeAgo}</div>
@@ -1282,7 +1282,7 @@ class WhatYourRecipeApp {
                                 <div class="activity-item">
                                     <div class="icon"><i class="fas fa-bell"></i></div>
                                     <div class="content">
-                                        <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
+                                        <strong>${activity.user_profile?.username || activity.user_profile?.full_name}</strong> 
                                         ${activity.content || 'had some activity'}
                                         <div class="activity-time">${timeAgo}</div>
                                     </div>
@@ -1498,7 +1498,7 @@ class WhatYourRecipeApp {
                                     <p>${recipe.description.substring(0, 100)}...</p>
                                     <div class="search-recipe-meta">
                                         <span>⭐ ${recipe.rating || 'N/A'}</span>
-                                        <span>by ${recipe.profiles?.full_name || recipe.profiles?.username || 'Anonymous'}</span>
+                                        <span>by ${recipe.profiles?.username || recipe.profiles?.full_name || 'Anonymous'}</span>
                                         <span>${new Date(recipe.created_at).toLocaleDateString()}</span>
                                     </div>
                                 </div>
