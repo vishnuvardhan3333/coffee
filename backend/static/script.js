@@ -840,8 +840,7 @@ class WhatYourRecipeApp {
             defects: formData.get('defects'),
             overall_impression: formData.get('overallImpression'),
             brewing_notes: formData.get('brewingNotes'),
-            is_public: document.getElementById('recipePrivacy').checked,
-            user_id: this.currentUser.id
+            is_public: document.getElementById('recipePrivacy').checked
         };
 
         // Validate required fields
@@ -866,7 +865,14 @@ class WhatYourRecipeApp {
 
         } catch (error) {
             console.error('Error saving recipe:', error);
-            this.showNotification('Error saving recipe. Please try again.', 'error');
+            
+            // Show specific validation errors if available
+            if (error.message.includes('422') || error.message.includes('validation')) {
+                this.showNotification('Please check your form data. Some fields may be invalid or missing.', 'error');
+                console.error('Validation error details:', error);
+            } else {
+                this.showNotification('Error saving recipe. Please try again.', 'error');
+            }
         }
     }
 

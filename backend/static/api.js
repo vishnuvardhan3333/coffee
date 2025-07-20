@@ -37,6 +37,16 @@ class APIClient {
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                
+                // For validation errors, provide more detail
+                if (response.status === 422 && errorData.detail) {
+                    console.error('Validation error details:', errorData);
+                    const errorMessage = Array.isArray(errorData.detail) 
+                        ? errorData.detail.map(err => `${err.loc?.join('.')} - ${err.msg}`).join('; ')
+                        : errorData.detail;
+                    throw new Error(`Validation Error: ${errorMessage}`);
+                }
+                
                 throw new Error(errorData.detail || `HTTP ${response.status}`);
             }
 

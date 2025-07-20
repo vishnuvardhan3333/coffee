@@ -77,38 +77,63 @@ class UserLogin(BaseModel):
     password: str
 
 class Recipe(BaseModel):
-    title: str
-    coffee_name: str
-    roast_level: str
-    grind_microns: int
-    coffee_amount: float
-    water_temp: int
-    extraction_time: str
-    total_yield: float
+    # Basic required fields
+    recipe_name: str
+    description: str
+    rating: Optional[float] = None
+    date_created: Optional[str] = None
     is_public: bool = True
-    # Basic variables
-    method: Optional[str] = None
+    
+    # Bean information
+    bean_variety: Optional[str] = None
+    bean_region: Optional[str] = None
+    india_estate: Optional[str] = None
+    processing_type: Optional[str] = None
+    
+    # Roasting profile
+    roast_type: Optional[str] = None
+    roast_level: Optional[str] = None
+    crack_time: Optional[str] = None
+    roast_time: Optional[float] = None
+    development_time: Optional[float] = None
+    
+    # Brewing parameters
+    brew_method: Optional[str] = None
+    grind_microns: Optional[int] = None
+    water_composition: Optional[str] = None
+    tds: Optional[float] = None
+    calcium: Optional[float] = None
+    magnesium: Optional[float] = None
+    potassium: Optional[float] = None
+    sodium: Optional[float] = None
+    coffee_amount: Optional[float] = None
     water_amount: Optional[float] = None
-    ratio: Optional[str] = None
-    # Professional variables
-    pre_infusion_time: Optional[str] = None
-    bloom_time: Optional[str] = None
-    water_quality: Optional[str] = None
-    equipment: Optional[str] = None
-    filter_type: Optional[str] = None
-    pressure_profile: Optional[str] = None
-    # Sensory
-    aroma: Optional[str] = None
-    flavor: Optional[str] = None
+    water_temp: Optional[int] = None
+    brew_time: Optional[float] = None
+    
+    # Serving preferences
+    milk_preference: Optional[str] = None
+    serving_temp: Optional[str] = None
+    sweetener: Optional[str] = None
+    sweetener_quantity: Optional[float] = None
+    serving_size: Optional[float] = None
+    
+    # Sensory & evaluation
+    aroma_notes: Optional[str] = None
+    body: Optional[str] = None
+    acidity_type: Optional[str] = None
+    sweetness: Optional[str] = None
+    balance: Optional[str] = None
     aftertaste: Optional[str] = None
-    acidity: Optional[int] = None
-    body: Optional[int] = None
-    balance: Optional[int] = None
-    sweetness: Optional[int] = None
-    overall_score: Optional[int] = None
-    tasting_notes: Optional[str] = None
-    # Additional
-    notes: Optional[str] = None
+    clean_cup: Optional[str] = None
+    uniformity: Optional[str] = None
+    cupping_score: Optional[float] = None
+    cupping_method: Optional[str] = None
+    defects: Optional[str] = None
+    overall_impression: Optional[str] = None
+    
+    # Additional notes
+    brewing_notes: Optional[str] = None
 
 class Vote(BaseModel):
     recipe_id: str
