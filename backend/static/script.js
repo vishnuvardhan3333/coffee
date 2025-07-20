@@ -1759,8 +1759,9 @@ class WhatYourRecipeApp {
         try {
             const recipes = await api.getUserRecipes(this.currentUser.id);
             
-            // Keep the header, update only the results area
-            const headerHtml = `
+                    if (recipes && recipes.length > 0) {
+            // Show header with button when user has recipes
+            const headerWithButton = `
                 <div class="my-recipes-header">
                     <h2><i class="fas fa-book"></i> My Recipes</h2>
                     <p>All the coffee recipes you've created</p>
@@ -1769,24 +1770,29 @@ class WhatYourRecipeApp {
                     </button>
                 </div>
             `;
-            
-            if (recipes && recipes.length > 0) {
-                feedContent.innerHTML = headerHtml;
-                recipes.forEach(recipe => {
-                    feedContent.appendChild(this.createRecipeCard(recipe));
-                });
-            } else {
-                feedContent.innerHTML = headerHtml + `
-                    <div class="empty-feed">
-                        <i class="fas fa-coffee"></i>
-                        <h3>No recipes yet</h3>
-                        <p>You haven't created any recipes yet. Start sharing your coffee expertise!</p>
-                        <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
-                            <i class="fas fa-plus"></i> Create Your First Recipe
-                        </button>
-                    </div>
-                `;
-            }
+            feedContent.innerHTML = headerWithButton;
+            recipes.forEach(recipe => {
+                feedContent.appendChild(this.createRecipeCard(recipe));
+            });
+        } else {
+            // Show header without button + empty state with button when no recipes
+            const headerWithoutButton = `
+                <div class="my-recipes-header">
+                    <h2><i class="fas fa-book"></i> My Recipes</h2>
+                    <p>All the coffee recipes you've created</p>
+                </div>
+            `;
+            feedContent.innerHTML = headerWithoutButton + `
+                <div class="empty-feed">
+                    <i class="fas fa-coffee"></i>
+                    <h3>No recipes yet</h3>
+                    <p>You haven't created any recipes yet. Start sharing your coffee expertise!</p>
+                    <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                        <i class="fas fa-plus"></i> Create Your First Recipe
+                    </button>
+                </div>
+            `;
+        }
         } catch (error) {
             console.error('Error loading my recipes:', error);
             feedContent.innerHTML = `
