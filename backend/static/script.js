@@ -1749,9 +1749,6 @@ class WhatYourRecipeApp {
             <div class="my-recipes-header">
                 <h2><i class="fas fa-book"></i> My Recipes</h2>
                 <p>All the coffee recipes you've created</p>
-                <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
-                    <i class="fas fa-plus"></i> Create New Recipe
-                </button>
             </div>
             <div class="loading-placeholder">Loading your recipes...</div>
         `;
