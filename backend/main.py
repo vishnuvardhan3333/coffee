@@ -22,7 +22,21 @@ app = FastAPI(
 )
 
 # Mount static files from frontend directory
+# Serve CSS, JS, and other static files at root level
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Individual routes for main static files so they work with relative paths
+@app.get("/styles.css")
+async def get_styles():
+    return FileResponse("static/styles.css", media_type="text/css")
+
+@app.get("/script.js")
+async def get_script():
+    return FileResponse("static/script.js", media_type="application/javascript")
+
+@app.get("/api.js")
+async def get_api():
+    return FileResponse("static/api.js", media_type="application/javascript")
 
 # CORS middleware - Allow frontend communication
 app.add_middleware(
