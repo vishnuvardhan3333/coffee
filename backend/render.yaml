@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: whatsyourrecipe-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: FRONTEND_URLS
+        value: https://yourusername.github.io,http://localhost:3000
+      - key: PORT
+        value: 10000 

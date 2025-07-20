@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What'sYourRecipe - Coffee Recipe Social Network</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- API Client for secure backend communication -->
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <i class="fas fa-coffee fa-spin"></i>
+            <h2>What'sYourRecipe</h2>
+            <p>Brewing connections...</p>
+        </div>
+    </div>
+
+    <!-- Authentication Container -->
+    <div id="authContainer" class="auth-container" style="display: none;">
+        <div class="auth-content">
+            <div class="auth-header">
+                <i class="fas fa-coffee"></i>
+                <h1>What'sYourRecipe</h1>
+                <p>Share your perfect coffee moments</p>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="auth-form">
+                <h2>Welcome Back</h2>
+                <form id="loginFormElement">
+                    <div class="form-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="loginEmail" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="auth-btn">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                </form>
+                <p class="auth-switch">
+                    New to What'sYourRecipe? <a href="#" id="showSignup">Create Account</a>
+                </p>
+                <p class="auth-switch">
+                    Didn't receive confirmation email? <a href="#" id="resendConfirmation">Resend</a>
+                </p>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupForm" class="auth-form" style="display: none;">
+                <h2>Join the Community</h2>
+                <div class="auth-notice">
+                    <i class="fas fa-info-circle"></i>
+                    <span>You'll receive a confirmation email to verify your account.</span>
+                </div>
+                <form id="signupFormElement">
+                    <div class="form-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="signupUsername" placeholder="Username" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="signupEmail" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="signupPassword" placeholder="Password" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-user-circle"></i>
+                        <input type="text" id="signupFullName" placeholder="Full Name" required>
+                    </div>
+                    <button type="submit" class="auth-btn">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                </form>
+                <p class="auth-switch">
+                    Already have an account? <a href="#" id="showLogin">Sign In</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="mainApp" class="main-app" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo">
+                        <i class="fas fa-coffee"></i>
+                        <span>What'sYourRecipe</span>
+                    </div>
+                </div>
+                
+                <div class="header-center">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search users or recipes...">
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <button class="header-btn" id="createRecipeBtn">
+                        <i class="fas fa-plus"></i>
+                        <span>Create Recipe</span>
+                    </button>
+                    <div class="user-menu">
+                        <div class="user-avatar" id="userAvatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-dropdown" id="userDropdown">
+                            <div class="dropdown-item" id="viewProfile">
+                                <i class="fas fa-user"></i> Profile
+                            </div>
+                            <div class="dropdown-item" id="myRecipes">
+                                <i class="fas fa-book"></i> My Recipes
+                            </div>
+                            <div class="dropdown-item" id="settings">
+                                <i class="fas fa-cog"></i> Settings
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-item" id="logout">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <div class="nav-item active" data-view="feed">
+                        <i class="fas fa-home"></i>
+                        <span>Home Feed</span>
+                    </div>
+                    <div class="nav-item" data-view="trending">
+                        <i class="fas fa-fire"></i>
+                        <span>Trending</span>
+                    </div>
+                    <div class="nav-item" data-view="following">
+                        <i class="fas fa-users"></i>
+                        <span>Following</span>
+                    </div>
+                    <div class="nav-item" data-view="saved">
+                        <i class="fas fa-bookmark"></i>
+                        <span>Saved</span>
+                    </div>
+                </nav>
+                
+                <div class="sidebar-section">
+                    <h3>Recommended Users</h3>
+                    <div id="recommendedUsers" class="recommended-users">
+                        <!-- Recommended users will be populated here -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Feed Container -->
+            <div class="feed-container">
+                <div class="feed-header">
+                    <div class="view-toggles">
+                        <button class="toggle-btn active" id="basicViewToggle">
+                            <i class="fas fa-coffee"></i> Basic View
+                        </button>
+                        <button class="toggle-btn" id="proViewToggle">
+                            <i class="fas fa-cogs"></i> Pro View
+                        </button>
+                    </div>
+                </div>
+
+                <div class="feed-content" id="feedContent">
+                    <!-- Recipe feed will be populated here -->
+                </div>
+
+                <div class="load-more-container">
+                    <button class="load-more-btn" id="loadMoreBtn">
+                        <i class="fas fa-chevron-down"></i> Load More Recipes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <aside class="right-panel">
+                <div class="panel-section">
+                    <h3>Activity Feed</h3>
+                    <div id="activityFeed" class="activity-feed">
+                        <!-- Recent activity will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <h3>Popular Tags</h3>
+                    <div class="popular-tags">
+                        <span class="tag">#espresso</span>
+                        <span class="tag">#pourover</span>
+                        <span class="tag">#coldBrew</span>
+                        <span class="tag">#latte</span>
+                        <span class="tag">#specialty</span>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Create Recipe Modal -->
+    <div id="createRecipeModal" class="modal">
+        <div class="modal-content create-recipe-modal">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-plus-circle"></i> Create New Recipe
+                </h2>
+                <button class="close-btn" id="closeCreateModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="recipe-privacy-toggle">
+                    <label class="privacy-toggle">
+                        <input type="checkbox" id="recipePrivacy" checked>
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">
+                            <i class="fas fa-globe"></i> Public Recipe
+                        </span>
+                    </label>
+                    <small>Public recipes can be seen by everyone. Private recipes are only visible to you.</small>
+                </div>
+
+                <div class="form-mode-toggle">
+                    <button type="button" id="basicModeBtn" class="mode-btn active">
+                        <i class="fas fa-coffee"></i> Basic Mode
+                    </button>
+                    <button type="button" id="proModeBtn" class="mode-btn">
+                        <i class="fas fa-cogs"></i> Professional Mode
+                    </button>
+                </div>
+                
+                <form id="recipeForm" class="recipe-form">
+                    <div class="form-section">
+                        <h2><i class="fas fa-tag"></i> Recipe Details</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="recipeName">Recipe Name *</label>
+                                <input type="text" id="recipeName" name="recipeName" required placeholder="My Perfect Morning Brew">
+                            </div>
+                            <div class="form-group">
+                                <label for="rating">Rating (1-10) *</label>
+                                <input type="number" id="rating" name="rating" min="1" max="10" step="0.5" required placeholder="8.5">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description *</label>
+                            <textarea id="description" name="description" required placeholder="Describe your recipe and what makes it special..." rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="dateCreated">Date Created *</label>
+                            <input type="date" id="dateCreated" name="dateCreated" required>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2><i class="fas fa-seedling"></i> Bean Information</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="beanVariety">Bean Variety</label>
+                                <select id="beanVariety" name="beanVariety">
+                                    <option value="">Select variety</option>
+                                    <option value="arabica">Arabica</option>
+                                    <option value="robusta">Robusta</option>
+                                    <option value="liberica">Liberica</option>
+                                    <option value="excelsa">Excelsa</option>
+                                    <option value="bourbon">Bourbon</option>
+                                    <option value="typica">Typica</option>
+                                    <option value="caturra">Caturra</option>
+                                    <option value="catuai">Catuai</option>
+                                    <option value="mundo-novo">Mundo Novo</option>
+                                    <option value="pacamara">Pacamara</option>
+                                    <option value="maragogype">Maragogype</option>
+                                    <option value="geisha">Geisha/Gesha</option>
+                                    <option value="sv-315">SL-28/SL-34</option>
+                                    <option value="java">Java</option>
+                                    <option value="kona">Kona</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="beanRegion">Bean Region</label>
+                                <select id="beanRegion" name="beanRegion">
+                                    <option value="">Select region</option>
+                                    <option value="brazil">Brazil</option>
+                                    <option value="colombia">Colombia</option>
+                                    <option value="ethiopia">Ethiopia</option>
+                                    <option value="guatemala">Guatemala</option>
+                                    <option value="costa-rica">Costa Rica</option>
+                                    <option value="honduras">Honduras</option>
+                                    <option value="nicaragua">Nicaragua</option>
+                                    <option value="panama">Panama</option>
+                                    <option value="jamaica">Jamaica</option>
+                                    <option value="hawaii">Hawaii</option>
+                                    <option value="yemen">Yemen</option>
+                                    <option value="kenya">Kenya</option>
+                                    <option value="tanzania">Tanzania</option>
+                                    <option value="rwanda">Rwanda</option>
+                                    <option value="burundi">Burundi</option>
+                                    <option value="uganda">Uganda</option>
+                                    <option value="india">India</option>
+                                    <option value="indonesia">Indonesia</option>
+                                    <option value="vietnam">Vietnam</option>
+                                    <option value="thailand">Thailand</option>
+                                    <option value="myanmar">Myanmar</option>
+                                    <option value="china">China</option>
+                                    <option value="papua-new-guinea">Papua New Guinea</option>
+                                    <option value="australia">Australia</option>
+                                    <option value="peru">Peru</option>
+                                    <option value="ecuador">Ecuador</option>
+                                    <option value="bolivia">Bolivia</option>
+                                    <option value="venezuela">Venezuela</option>
+                                    <option value="mexico">Mexico</option>
+                                    <option value="el-salvador">El Salvador</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group pro-field" id="indiaEstateGroup" style="display: none;">
+                            <label for="indiaEstate">Indian Coffee Estate</label>
+                            <select id="indiaEstate" name="indiaEstate">
+                                <option value="">Select estate</option>
+                                <!-- Indian estates will be populated dynamically -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-group pro-field">
+                            <label for="processingType">Processing Type</label>
+                            <select id="processingType" name="processingType">
+                                <option value="">Select processing</option>
+                                <option value="washed">Washed (Wet Process)</option>
+                                <option value="natural">Natural (Dry Process)</option>
+                                <option value="honey">Honey Process</option>
+                                <option value="semi-washed">Semi-Washed</option>
+                                <option value="wet-hulled">Wet Hulled (Giling Basah)</option>
+                                <option value="anaerobic">Anaerobic Fermentation</option>
+                                <option value="carbonic-maceration">Carbonic Maceration</option>
+                                <option value="monsoon-malabar">Monsoon Malabar</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-section pro-field">
+                        <h2><i class="fas fa-fire"></i> Roasting Profile</h2>
+                        <div class="form-row">
+                            <div class="form-group pro-field">
+                                <label for="roastType">Roast Type</label>
+                                <select id="roastType" name="roastType">
+                                    <option value="">Select roast type</option>
+                                    <option value="light">Light Roast</option>
+                                    <option value="medium-light">Medium-Light Roast</option>
+                                    <option value="medium">Medium Roast</option>
+                                    <option value="medium-dark">Medium-Dark Roast</option>
+                                    <option value="dark">Dark Roast</option>
+                                    <option value="french">French Roast</option>
+                                    <option value="italian">Italian Roast</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="roastLevel">Roast Level</label>
+                                <select id="roastLevel" name="roastLevel">
+                                    <option value="">Select level</option>
+                                    <option value="cinnamon">Cinnamon</option>
+                                    <option value="new-england">New England</option>
+                                    <option value="american">American</option>
+                                    <option value="city">City</option>
+                                    <option value="city-plus">City+</option>
+                                    <option value="full-city">Full City</option>
+                                    <option value="full-city-plus">Full City+</option>
+                                    <option value="vienna">Vienna</option>
+                                    <option value="french">French</option>
+                                    <option value="italian">Italian</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group pro-field">
+                            <label for="crackTime">Crack Development</label>
+                            <select id="crackTime" name="crackTime">
+                                <option value="">Select crack timing</option>
+                                <option value="before-first">Before First Crack</option>
+                                <option value="first-crack-start">First Crack Start</option>
+                                <option value="first-crack-middle">First Crack Middle</option>
+                                <option value="first-crack-end">First Crack End</option>
+                                <option value="between-cracks">Between Cracks</option>
+                                <option value="second-crack-start">Second Crack Start</option>
+                                <option value="second-crack-middle">Second Crack Middle</option>
+                                <option value="second-crack-end">Second Crack End</option>
+                                <option value="beyond-second">Beyond Second Crack</option>
+                            </select>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="roastTime">Total Roast Time (minutes)</label>
+                                <input type="number" id="roastTime" name="roastTime" min="8" max="30" step="0.5" placeholder="12">
+                            </div>
+                            <div class="form-group">
+                                <label for="developmentTime">Development Time (%)</label>
+                                <input type="number" id="developmentTime" name="developmentTime" min="15" max="35" step="1" placeholder="20">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2><i class="fas fa-tint"></i> Brewing Parameters</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="brewMethod">Brew Method</label>
+                                <select id="brewMethod" name="brewMethod">
+                                    <option value="">Select method</option>
+                                    <option value="espresso">Espresso</option>
+                                    <option value="pour-over">Pour Over</option>
+                                    <option value="french-press">French Press</option>
+                                    <option value="aeropress">AeroPress</option>
+                                    <option value="cold-brew">Cold Brew</option>
+                                    <option value="turkish">Turkish</option>
+                                    <option value="moka-pot">Moka Pot</option>
+                                    <option value="drip-coffee">Drip Coffee</option>
+                                    <option value="siphon">Siphon</option>
+                                </select>
+                            </div>
+                            <div class="form-group pro-field">
+                                <label for="grindMicrons">Grind Size (Microns)</label>
+                                <input type="number" id="grindMicrons" name="grindMicrons" min="200" max="2000" step="50" placeholder="800">
+                                <small style="color: var(--text-light); font-size: 0.85rem;">Extra Fine: 200-400μm, Fine: 400-600μm, Medium: 600-1000μm, Coarse: 1000-1400μm</small>
+                            </div>
+                            <div class="form-group pro-field">
+                                <label for="waterComposition">Water Composition</label>
+                                <select id="waterComposition" name="waterComposition">
+                                    <option value="">Select water type</option>
+                                    <option value="soft">Soft Water</option>
+                                    <option value="medium-hard">Medium Hard Water</option>
+                                    <option value="hard">Hard Water</option>
+                                    <option value="distilled">Distilled Water</option>
+                                    <option value="filtered">Filtered Water</option>
+                                    <option value="spring">Spring Water</option>
+                                    <option value="tap">Tap Water</option>
+                                    <option value="custom-mineral">Custom Mineral Content</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="tds">TDS - Total Dissolved Solids (ppm)</label>
+                                <input type="number" id="tds" name="tds" min="0" max="1000" step="5" placeholder="150">
+                                <small style="color: var(--text-light); font-size: 0.85rem;">Optimal range: 75-150 ppm for coffee</small>
+                            </div>
+                            <div class="form-group">
+                                <!-- Empty for layout balance -->
+                            </div>
+                        </div>
+                        <div class="mineral-subsection pro-field" style="margin-top: 20px; padding: 15px; background: var(--background); border-radius: 12px; border: 1px solid var(--border);">
+                            <h3 style="font-size: 1.1rem; color: var(--primary-color); margin-bottom: 15px;">
+                                <i class="fas fa-flask"></i> Water Mineral Content (mg/L)
+                            </h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="calcium">Calcium (Ca²⁺)</label>
+                                    <input type="number" id="calcium" name="calcium" min="0" max="200" step="1" placeholder="68">
+                                    <small style="color: var(--text-light); font-size: 0.85rem;">SCA range: 68-85 mg/L</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="magnesium">Magnesium (Mg²⁺)</label>
+                                    <input type="number" id="magnesium" name="magnesium" min="0" max="50" step="0.5" placeholder="24">
+                                    <small style="color: var(--text-light); font-size: 0.85rem;">SCA range: 19-30 mg/L</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="potassium">Potassium (K⁺)</label>
+                                    <input type="number" id="potassium" name="potassium" min="0" max="20" step="0.1" placeholder="4">
+                                    <small style="color: var(--text-light); font-size: 0.85rem;">Typical range: 2-6 mg/L</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sodium">Sodium (Na⁺)</label>
+                                    <input type="number" id="sodium" name="sodium" min="0" max="20" step="0.1" placeholder="10">
+                                    <small style="color: var(--text-light); font-size: 0.85rem;">Typical range: 5-15 mg/L</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="coffeeAmount">Coffee Amount (grams)</label>
+                                <input type="number" id="coffeeAmount" name="coffeeAmount" min="5" max="100" step="0.5" placeholder="18">
+                            </div>
+                            <div class="form-group">
+                                <label for="waterAmount">Water Amount (ml)</label>
+                                <input type="number" id="waterAmount" name="waterAmount" min="50" max="2000" step="10" placeholder="300">
+                            </div>
+                        </div>
+                        <div class="ratio-display" id="ratioDisplay">
+                            <span>Ratio: 1:16.7</span>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="waterTemp">Water Temperature (°C)</label>
+                                <input type="number" id="waterTemp" name="waterTemp" min="80" max="100" step="1" placeholder="92">
+                            </div>
+                            <div class="form-group">
+                                <label for="brewTime">Brew Time (minutes)</label>
+                                <input type="number" id="brewTime" name="brewTime" min="0.5" max="10" step="0.25" placeholder="2.5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2><i class="fas fa-glass-whiskey"></i> Serving Preferences</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="milkPreference">Milk Preference</label>
+                                <select id="milkPreference" name="milkPreference">
+                                    <option value="">No milk</option>
+                                    <option value="whole-milk">Whole Milk</option>
+                                    <option value="2-percent">2% Milk</option>
+                                    <option value="skim-milk">Skim Milk</option>
+                                    <option value="almond-milk">Almond Milk</option>
+                                    <option value="oat-milk">Oat Milk</option>
+                                    <option value="soy-milk">Soy Milk</option>
+                                    <option value="coconut-milk">Coconut Milk</option>
+                                    <option value="heavy-cream">Heavy Cream</option>
+                                    <option value="half-and-half">Half and Half</option>
+                                </select>
+                            </div>
+                            <div class="form-group pro-field">
+                                <label for="servingTemp">Preferred Drinking Temperature</label>
+                                <select id="servingTemp" name="servingTemp">
+                                    <option value="">Select temperature</option>
+                                    <option value="hot">Hot (65-70°C)</option>
+                                    <option value="warm">Warm (55-60°C)</option>
+                                    <option value="room-temp">Room Temperature (20-25°C)</option>
+                                    <option value="cold">Cold (5-10°C)</option>
+                                    <option value="iced">Iced (0-5°C)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="sweetener">Sweetener</label>
+                                <select id="sweetener" name="sweetener">
+                                    <option value="">None</option>
+                                    <option value="sugar">White Sugar</option>
+                                    <option value="brown-sugar">Brown Sugar</option>
+                                    <option value="honey">Honey</option>
+                                    <option value="maple-syrup">Maple Syrup</option>
+                                    <option value="stevia">Stevia</option>
+                                    <option value="agave">Agave</option>
+                                    <option value="artificial">Artificial Sweetener</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="sweetenerQuantity">Sweetener Quantity</label>
+                                <input type="number" id="sweetenerQuantity" name="sweetenerQuantity" min="0" max="50" step="0.5" placeholder="2">
+                                <small style="color: var(--text-light); font-size: 0.85rem;">Amount in grams or teaspoons</small>
+                            </div>
+                        </div>
+                        <div class="form-row pro-field">
+                            <div class="form-group">
+                                <label for="servingSize">Serving Size (ml)</label>
+                                <input type="number" id="servingSize" name="servingSize" min="30" max="500" step="10" placeholder="200">
+                            </div>
+                            <div class="form-group">
+                                <!-- Empty for layout balance -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section pro-field">
+                        <h2><i class="fas fa-nose"></i> Sensory & Evaluation</h2>
+                        <div class="form-group">
+                            <label for="aromaNotes">Aroma Notes</label>
+                            <textarea id="aromaNotes" name="aromaNotes" placeholder="Describe the aroma: floral, fruity, nutty, chocolatey..." rows="2"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="body">Body</label>
+                                <select id="body" name="body">
+                                    <option value="">Select body</option>
+                                    <option value="light">Light</option>
+                                    <option value="medium-light">Medium-Light</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="medium-full">Medium-Full</option>
+                                    <option value="full">Full</option>
+                                    <option value="heavy">Heavy</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="acidityType">Acidity Type</label>
+                                <select id="acidityType" name="acidityType">
+                                    <option value="">Select acidity</option>
+                                    <option value="bright">Bright</option>
+                                    <option value="crisp">Crisp</option>
+                                    <option value="tart">Tart</option>
+                                    <option value="wine-like">Wine-like</option>
+                                    <option value="citric">Citric</option>
+                                    <option value="malic">Malic</option>
+                                    <option value="phosphoric">Phosphoric</option>
+                                    <option value="acetic">Acetic</option>
+                                    <option value="low">Low</option>
+                                    <option value="balanced">Balanced</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sweetness">Sweetness</label>
+                                <select id="sweetness" name="sweetness">
+                                    <option value="">Select sweetness</option>
+                                    <option value="very-low">Very Low</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium-low">Medium-Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="medium-high">Medium-High</option>
+                                    <option value="high">High</option>
+                                    <option value="very-high">Very High</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="balance">Balance</label>
+                                <select id="balance" name="balance">
+                                    <option value="">Select balance</option>
+                                    <option value="unbalanced">Unbalanced</option>
+                                    <option value="slightly-unbalanced">Slightly Unbalanced</option>
+                                    <option value="balanced">Balanced</option>
+                                    <option value="well-balanced">Well Balanced</option>
+                                    <option value="exceptional-balance">Exceptional Balance</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="aftertaste">Aftertaste/Finish</label>
+                            <textarea id="aftertaste" name="aftertaste" placeholder="Describe the aftertaste and finish..." rows="2"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cleanCup">Clean Cup</label>
+                                <select id="cleanCup" name="cleanCup">
+                                    <option value="">Select clean cup</option>
+                                    <option value="poor">Poor</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="good">Good</option>
+                                    <option value="very-good">Very Good</option>
+                                    <option value="excellent">Excellent</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="uniformity">Uniformity</label>
+                                <select id="uniformity" name="uniformity">
+                                    <option value="">Select uniformity</option>
+                                    <option value="poor">Poor</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="good">Good</option>
+                                    <option value="very-good">Very Good</option>
+                                    <option value="excellent">Excellent</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cuppingScore">Cupping Score (out of 100)</label>
+                                <input type="number" id="cuppingScore" name="cuppingScore" min="60" max="100" step="0.25" placeholder="85">
+                            </div>
+                            <div class="form-group">
+                                <label for="cuppingMethod">Cupping Method</label>
+                                <select id="cuppingMethod" name="cuppingMethod">
+                                    <option value="">Select method</option>
+                                    <option value="sca-standard">SCA Standard</option>
+                                    <option value="coe-protocol">COE Protocol</option>
+                                    <option value="informal-tasting">Informal Tasting</option>
+                                    <option value="commercial-grading">Commercial Grading</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="defects">Defects & Off-flavors</label>
+                            <textarea id="defects" name="defects" placeholder="Note any defects or off-flavors..." rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="overallImpression">Overall Impression</label>
+                            <textarea id="overallImpression" name="overallImpression" placeholder="Your overall thoughts on this coffee..." rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2><i class="fas fa-star"></i> Additional Notes</h2>
+                        <div class="form-group">
+                            <label for="brewingNotes">Brewing Notes & Tips</label>
+                            <textarea id="brewingNotes" name="brewingNotes" placeholder="Special techniques, timing, or observations..." rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelRecipe">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus-circle"></i> <span id="submitBtnText">Create Recipe</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Detail Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalRecipeTitle">Recipe Details</h2>
+                <button class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalRecipeContent">
+                <!-- Recipe details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile Modal -->
+    <div id="userProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="profileModalTitle">User Profile</h2>
+                <button class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="profileModalContent">
+                <!-- User profile will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Results Modal -->
+    <div id="searchModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Search Results</h2>
+                <button class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="searchResults">
+                <!-- Search results will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 
