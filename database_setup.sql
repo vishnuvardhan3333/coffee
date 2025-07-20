@@ -483,48 +483,5 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Insert some sample data for demonstration
-INSERT INTO public.profiles (id, username, full_name, email, bio) VALUES
-    ('00000000-0000-0000-0000-000000000001', 'coffeemaster', 'Coffee Master', 'coffee@example.com', 'Professional barista and coffee enthusiast'),
-    ('00000000-0000-0000-0000-000000000002', 'beanexplorer', 'Bean Explorer', 'beans@example.com', 'Always searching for the perfect bean')
-ON CONFLICT (id) DO NOTHING;
-
--- Sample recipes
-INSERT INTO public.recipes (
-    id, user_id, recipe_name, description, rating, date_created,
-    bean_variety, bean_region, brew_method, coffee_amount, water_amount,
-    water_temp, brew_time, is_public
-) VALUES
-    (
-        '10000000-0000-0000-0000-000000000001',
-        '00000000-0000-0000-0000-000000000001',
-        'Perfect Morning Espresso',
-        'My go-to espresso recipe that never fails to start the day right. Rich, balanced, and full of flavor.',
-        9.5,
-        CURRENT_DATE,
-        'arabica',
-        'colombia',
-        'espresso',
-        18.0,
-        36.0,
-        93,
-        0.5,
-        true
-    ),
-    (
-        '10000000-0000-0000-0000-000000000002',
-        '00000000-0000-0000-0000-000000000002',
-        'Ethiopian Pour Over Delight',
-        'A bright and floral pour-over that showcases the best of Ethiopian coffee. Perfect for weekend mornings.',
-        8.8,
-        CURRENT_DATE - INTERVAL '1 day',
-        'arabica',
-        'ethiopia',
-        'pour-over',
-        20.0,
-        320.0,
-        95,
-        3.0,
-        true
-    )
-ON CONFLICT (id) DO NOTHING; 
+-- Note: Sample data removed to avoid foreign key constraint violations
+-- Real user profiles and recipes will be created when users sign up and create content 

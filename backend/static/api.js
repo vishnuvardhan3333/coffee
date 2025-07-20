@@ -129,8 +129,12 @@ class APIClient {
         });
     }
 
-    async getRecipes(page = 1, limit = 10, view = 'feed') {
-        return await this.request(`/recipes?page=${page}&limit=${limit}&view=${view}`);
+    async getRecipes(page = 1, limit = 10, view = 'feed', trendingDays = 7) {
+        let url = `/recipes?page=${page}&limit=${limit}&view=${view}`;
+        if (view === 'trending') {
+            url += `&trending_days=${trendingDays}`;
+        }
+        return await this.request(url);
     }
 
     async getRecipe(recipeId) {
@@ -157,6 +161,25 @@ class APIClient {
         return await this.request(`/follow/${userId}`, {
             method: 'POST',
         });
+    }
+
+    async getFollowStatus(userId) {
+        return await this.request(`/follow-status/${userId}`);
+    }
+
+    async getUserStats(userId) {
+        return await this.request(`/user-stats/${userId}`);
+    }
+
+    // Save recipe endpoints
+    async saveRecipe(recipeId) {
+        return await this.request(`/save-recipe/${recipeId}`, {
+            method: 'POST',
+        });
+    }
+
+    async getSaveStatus(recipeId) {
+        return await this.request(`/save-status/${recipeId}`);
     }
 
     // Health check

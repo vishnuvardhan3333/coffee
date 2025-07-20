@@ -10,6 +10,7 @@ class WhatYourRecipeApp {
         this.feedPage = 0;
         this.feedLimit = 10;
         this.currentView = 'feed';
+        this.trendingDays = 7; // Default to weekly trending
         
         this.init();
     }
@@ -395,7 +396,8 @@ class WhatYourRecipeApp {
             const recipes = await api.getRecipes(
                 this.feedPage + 1, // API uses 1-based pagination
                 this.feedLimit,
-                this.currentView
+                this.currentView,
+                this.trendingDays
             );
 
             if (this.feedPage === 0) {
@@ -486,9 +488,9 @@ class WhatYourRecipeApp {
         };
 
         // Calculate vote counts
-        const upvotes = recipe.votes?.filter(v => v.vote_type === 'up').length || 0;
-        const downvotes = recipe.votes?.filter(v => v.vote_type === 'down').length || 0;
-        const userVote = recipe.votes?.find(v => v.user_id === this.currentUser?.id)?.vote_type;
+        const upvotes = recipe.recipe_votes?.filter(v => v.vote_type === 'up').length || 0;
+        const downvotes = recipe.recipe_votes?.filter(v => v.vote_type === 'down').length || 0;
+        const userVote = recipe.recipe_votes?.find(v => v.user_id === this.currentUser?.id)?.vote_type;
 
         card.innerHTML = `
             <div class="recipe-card-header">
@@ -496,11 +498,11 @@ class WhatYourRecipeApp {
                     <div class="avatar">
                         ${recipe.profiles?.avatar_url 
                             ? `<img src="${recipe.profiles.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
-                            : (recipe.profiles?.full_name?.charAt(0) || recipe.author_name?.charAt(0) || 'U')
+                            : (recipe.profiles?.full_name?.charAt(0)?.toUpperCase() || recipe.profiles?.username?.charAt(0)?.toUpperCase() || 'U')
                         }
                     </div>
                     <div class="info">
-                        <div class="name">${recipe.profiles?.full_name || recipe.author_name || 'Anonymous Chef'}</div>
+                        <div class="name">${recipe.profiles?.full_name || recipe.profiles?.username || 'Anonymous Chef'}</div>
                         <div class="time">${formatDate(recipe.created_at)}</div>
                     </div>
                 </div>
@@ -749,8 +751,25 @@ class WhatYourRecipeApp {
             return;
         }
 
-        // Implementation for saving recipes
-        this.showNotification('Recipe saved!', 'success');
+        try {
+            const response = await api.saveRecipe(recipeId);
+            this.showNotification(response.message, 'success');
+            
+            // Update the save button state
+            const saveBtn = document.querySelector(`[onclick="app.saveRecipe('${recipeId}')"]`);
+            if (saveBtn) {
+                if (response.action === 'saved') {
+                    saveBtn.innerHTML = '<i class="fas fa-bookmark-solid"></i> Saved';
+                    saveBtn.classList.add('saved');
+                } else {
+                    saveBtn.innerHTML = '<i class="fas fa-bookmark"></i> Save';
+                    saveBtn.classList.remove('saved');
+                }
+            }
+        } catch (error) {
+            console.error('Error saving recipe:', error);
+            this.showNotification('Error saving recipe', 'error');
+        }
     }
 
     showCreateRecipeModal() {

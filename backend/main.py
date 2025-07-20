@@ -339,16 +339,80 @@ async def get_recipes(
     page: int = 1,
     limit: int = 10,
     view: str = "feed",  # feed, trending, following, saved
+    trending_days: int = 7,  # 1 for daily, 7 for weekly trending
     current_user = Depends(get_current_user)
 ):
     try:
         offset = (page - 1) * limit
         print(f"Getting recipes: page={page}, limit={limit}, view={view}, user={current_user.id}")
         
-        # Simplified query for now - just get basic recipes without complex joins
-        result = supabase.table("recipes").select("*").eq("is_public", True).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+        base_query = """
+            *, 
+            profiles!recipes_user_id_fkey(id, username, full_name, avatar_url),
+            recipe_votes(vote_type, user_id)
+        """
         
-        print(f"Recipes result: {result}")
+        if view == "following":
+            # Get recipes from followed users
+            followed_users_result = supabase.table("follows").select("following_id").eq("follower_id", current_user.id).execute()
+            followed_user_ids = [follow["following_id"] for follow in followed_users_result.data] if followed_users_result.data else []
+            
+            if not followed_user_ids:
+                return []  # No followed users
+            
+            result = supabase.table("recipes").select(base_query).in_("user_id", followed_user_ids).eq("is_public", True).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+        
+        elif view == "saved":
+            # Get saved recipes
+            saved_recipes_result = supabase.table("saved_recipes").select("recipe_id").eq("user_id", current_user.id).execute()
+            saved_recipe_ids = [save["recipe_id"] for save in saved_recipes_result.data] if saved_recipes_result.data else []
+            
+            if not saved_recipe_ids:
+                return []  # No saved recipes
+            
+            result = supabase.table("recipes").select(base_query).in_("id", saved_recipe_ids).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+        
+        elif view == "trending":
+            # Get trending recipes (most upvotes in specified timeframe) 
+            days_ago = (datetime.now() - timedelta(days=trending_days)).isoformat()
+            
+            # First get all public recipes from specified timeframe
+            result = supabase.table("recipes").select(base_query).eq("is_public", True).gte("created_at", days_ago).order("created_at", desc=True).execute()
+            
+            # Sort by upvote count in Python since Supabase doesn't support complex aggregations in this context
+            if result.data:
+                for recipe in result.data:
+                    upvotes = len([v for v in recipe.get("recipe_votes", []) if v["vote_type"] == "up"])
+                    downvotes = len([v for v in recipe.get("recipe_votes", []) if v["vote_type"] == "down"])
+                    recipe["vote_score"] = upvotes - downvotes
+                
+                # Sort by vote score
+                result.data.sort(key=lambda x: x.get("vote_score", 0), reverse=True)
+                
+                # Apply pagination manually
+                result.data = result.data[offset:offset + limit]
+        
+        else:  # feed - smart home feed
+            # Get recipes from followed users + trending recipes
+            followed_users_result = supabase.table("follows").select("following_id").eq("follower_id", current_user.id).execute()
+            followed_user_ids = [follow["following_id"] for follow in followed_users_result.data] if followed_users_result.data else []
+            
+            if followed_user_ids:
+                # Mix of followed users' recipes and trending recipes
+                followed_result = supabase.table("recipes").select(base_query).in_("user_id", followed_user_ids).eq("is_public", True).order("created_at", desc=True).limit(limit // 2).execute()
+                
+                trending_result = supabase.table("recipes").select(base_query).eq("is_public", True).order("created_at", desc=True).limit(limit // 2).execute()
+                
+                # Combine and sort by creation date
+                combined_recipes = (followed_result.data or []) + (trending_result.data or [])
+                combined_recipes.sort(key=lambda x: x["created_at"], reverse=True)
+                
+                result = type('obj', (object,), {'data': combined_recipes[:limit]})
+            else:
+                # Just show trending recipes if not following anyone
+                result = supabase.table("recipes").select(base_query).eq("is_public", True).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+        
+        print(f"Recipes result count: {len(result.data) if result.data else 0}")
         return result.data or []
     except Exception as e:
         print(f"Error getting recipes: {e}")
@@ -385,33 +449,43 @@ async def search_recipes(query: str, limit: int = 10):
 @app.post("/votes")
 async def cast_vote(vote_data: Vote, current_user = Depends(get_current_user)):
     try:
+        # Ensure user profile exists
+        await ensure_user_profile(current_user)
+        
         # Check if user already voted
-        existing_vote = supabase.table("votes").select("*").eq("recipe_id", vote_data.recipe_id).eq("user_id", current_user.id).execute()
+        existing_vote = supabase.table("recipe_votes").select("*").eq("recipe_id", vote_data.recipe_id).eq("user_id", current_user.id).execute()
         
         if existing_vote.data:
             # Update existing vote
             if existing_vote.data[0]["vote_type"] == vote_data.vote_type:
                 # Remove vote if same type
-                supabase.table("votes").delete().eq("id", existing_vote.data[0]["id"]).execute()
-                return {"message": "Vote removed"}
+                supabase.table("recipe_votes").delete().eq("id", existing_vote.data[0]["id"]).execute()
+                return {"message": "Vote removed", "action": "removed"}
             else:
                 # Update vote type
-                result = supabase.table("votes").update({"vote_type": vote_data.vote_type}).eq("id", existing_vote.data[0]["id"]).execute()
-                return {"message": "Vote updated", "vote": result.data[0]}
+                result = supabase.table("recipe_votes").update({"vote_type": vote_data.vote_type}).eq("id", existing_vote.data[0]["id"]).execute()
+                return {"message": "Vote updated", "action": "updated", "vote": result.data[0]}
         else:
             # Create new vote
-            vote_dict = vote_data.dict()
+            vote_dict = vote_data.model_dump()
             vote_dict["user_id"] = current_user.id
-            result = supabase.table("votes").insert(vote_dict).execute()
-            return {"message": "Vote cast", "vote": result.data[0]}
+            result = supabase.table("recipe_votes").insert(vote_dict).execute()
+            return {"message": "Vote cast", "action": "created", "vote": result.data[0]}
             
     except Exception as e:
+        print(f"Vote error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 # Follow endpoints
 @app.post("/follow/{user_id}")
 async def follow_user(user_id: str, current_user = Depends(get_current_user)):
     try:
+        # Ensure both users have profiles
+        await ensure_user_profile(current_user)
+        target_user = await supabase.auth.admin.get_user_by_id(user_id)
+        if not target_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
         if user_id == current_user.id:
             raise HTTPException(status_code=400, detail="Cannot follow yourself")
         
@@ -421,17 +495,44 @@ async def follow_user(user_id: str, current_user = Depends(get_current_user)):
         if existing.data:
             # Unfollow
             supabase.table("follows").delete().eq("id", existing.data[0]["id"]).execute()
-            return {"message": "Unfollowed", "following": False}
+            return {"message": "Unfollowed", "following": False, "action": "unfollowed"}
         else:
             # Follow
             result = supabase.table("follows").insert({
                 "follower_id": current_user.id,
                 "following_id": user_id
             }).execute()
-            return {"message": "Following", "following": True}
+            return {"message": "Following", "following": True, "action": "followed"}
             
     except Exception as e:
+        print(f"Follow error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+# Get user's following status
+@app.get("/follow-status/{user_id}")
+async def get_follow_status(user_id: str, current_user = Depends(get_current_user)):
+    try:
+        result = supabase.table("follows").select("*").eq("follower_id", current_user.id).eq("following_id", user_id).execute()
+        return {"following": len(result.data) > 0}
+    except Exception as e:
+        return {"following": False}
+
+# Get user's followers and following counts
+@app.get("/user-stats/{user_id}")
+async def get_user_stats(user_id: str):
+    try:
+        followers = supabase.table("follows").select("*", count="exact").eq("following_id", user_id).execute()
+        following = supabase.table("follows").select("*", count="exact").eq("follower_id", user_id).execute()
+        recipes = supabase.table("recipes").select("*", count="exact").eq("user_id", user_id).eq("is_public", True).execute()
+        
+        return {
+            "followers_count": followers.count or 0,
+            "following_count": following.count or 0,
+            "recipes_count": recipes.count or 0
+        }
+    except Exception as e:
+        print(f"User stats error: {e}")
+        return {"followers_count": 0, "following_count": 0, "recipes_count": 0}
 
 # Serve the frontend at root
 @app.get("/")
@@ -442,6 +543,39 @@ async def serve_frontend():
 # Environment detection
 def get_environment():
     return "production" if os.getenv("PORT") else "development"
+
+# Saved recipes endpoints
+@app.post("/save-recipe/{recipe_id}")
+async def save_recipe(recipe_id: str, current_user = Depends(get_current_user)):
+    try:
+        await ensure_user_profile(current_user)
+        
+        # Check if already saved
+        existing = supabase.table("saved_recipes").select("*").eq("user_id", current_user.id).eq("recipe_id", recipe_id).execute()
+        
+        if existing.data:
+            # Unsave
+            supabase.table("saved_recipes").delete().eq("id", existing.data[0]["id"]).execute()
+            return {"message": "Recipe unsaved", "saved": False, "action": "unsaved"}
+        else:
+            # Save
+            result = supabase.table("saved_recipes").insert({
+                "user_id": current_user.id,
+                "recipe_id": recipe_id
+            }).execute()
+            return {"message": "Recipe saved", "saved": True, "action": "saved"}
+            
+    except Exception as e:
+        print(f"Save recipe error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/save-status/{recipe_id}")
+async def get_save_status(recipe_id: str, current_user = Depends(get_current_user)):
+    try:
+        result = supabase.table("saved_recipes").select("*").eq("user_id", current_user.id).eq("recipe_id", recipe_id).execute()
+        return {"saved": len(result.data) > 0}
+    except Exception as e:
+        return {"saved": False}
 
 # Health check
 @app.get("/health")
