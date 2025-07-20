@@ -485,8 +485,10 @@ async def follow_user(user_id: str, current_user = Depends(get_current_user)):
     try:
         # Ensure both users have profiles
         await ensure_user_profile(current_user)
-        target_user = await supabase.auth.admin.get_user_by_id(user_id)
-        if not target_user:
+        
+        # Check if target user exists by checking profiles table
+        target_profile = supabase.table("profiles").select("id").eq("id", user_id).execute()
+        if not target_profile.data:
             raise HTTPException(status_code=404, detail="User not found")
         
         if user_id == current_user.id:
