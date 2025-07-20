@@ -496,11 +496,11 @@ class WhatYourRecipeApp {
                     <div class="avatar">
                         ${recipe.profiles?.avatar_url 
                             ? `<img src="${recipe.profiles.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
-                            : (recipe.profiles?.full_name?.charAt(0) || 'U')
+                            : (recipe.profiles?.full_name?.charAt(0) || recipe.author_name?.charAt(0) || 'U')
                         }
                     </div>
                     <div class="info">
-                        <div class="name">${recipe.profiles?.full_name || 'Unknown User'}</div>
+                        <div class="name">${recipe.profiles?.full_name || recipe.author_name || 'Anonymous Chef'}</div>
                         <div class="time">${formatDate(recipe.created_at)}</div>
                     </div>
                 </div>
