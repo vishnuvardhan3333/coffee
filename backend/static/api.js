@@ -1,6 +1,6 @@
 // API Configuration
-const API_BASE_URL = 'http://localhost:8000'; // Change this to your deployed backend URL
-// For production: const API_BASE_URL = 'https://your-backend-url.com';
+const API_BASE_URL = 'https://coffee-m9ux.onrender.com'; // Your deployed backend URL
+// For development: const API_BASE_URL = 'http://localhost:8000';
 
 class APIClient {
     constructor() {

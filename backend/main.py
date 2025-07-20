@@ -22,7 +22,7 @@ app = FastAPI(
 )
 
 # Mount static files from frontend directory
-app.mount("/static", StaticFiles(directory="../frontend"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # CORS middleware - Allow frontend communication
 app.add_middleware(
@@ -34,8 +34,8 @@ app.add_middleware(
         "http://127.0.0.1:8000",
         "http://localhost:5500",  # Live Server default
         "http://127.0.0.1:5500",
-        "https://yourusername.github.io",
-        # Add your actual GitHub Pages URL here
+        "https://coffee-m9ux.onrender.com",
+        # Your deployed app URL
     ] + (os.getenv("FRONTEND_URLS", "").split(",") if os.getenv("FRONTEND_URLS") else []),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -363,8 +363,9 @@ async def follow_user(user_id: str, current_user = Depends(get_current_user)):
 
 # Serve the frontend at root
 @app.get("/")
+@app.head("/")
 async def serve_frontend():
-    return FileResponse("../frontend/index.html")
+    return FileResponse("static/index.html")
 
 # Health check
 @app.get("/health")
