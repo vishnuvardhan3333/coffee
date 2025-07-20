@@ -143,7 +143,7 @@ class WhatYourRecipeApp {
 
         // Header
         document.getElementById('createRecipeBtn').addEventListener('click', () => {
-            this.showCreateRecipeModal();
+            this.showCreateRecipePage();
         });
 
         document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -201,14 +201,8 @@ class WhatYourRecipeApp {
             this.setViewMode(true);
         });
 
-        // Recipe form
-        document.getElementById('closeCreateModal').addEventListener('click', () => {
-            this.hideCreateRecipeModal();
-        });
-
-        document.getElementById('cancelRecipe').addEventListener('click', () => {
-            this.hideCreateRecipeModal();
-        });
+        // Recipe form - these are no longer needed as we use page-based navigation
+        // document.getElementById('closeCreateModal') and cancelRecipe buttons are replaced with back buttons
 
         document.getElementById('recipeForm').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -933,26 +927,286 @@ class WhatYourRecipeApp {
         }
     }
 
-    showCreateRecipeModal() {
-        document.getElementById('createRecipeModal').classList.add('show');
+    showCreateRecipePage() {
+        const feedContent = document.getElementById('feedContent');
         this.currentEditingId = null;
-        this.clearForm();
+        
+        feedContent.innerHTML = `
+            <div class="create-recipe-page">
+                <div class="create-recipe-header">
+                    <button class="back-btn" onclick="app.goBack()">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <h1><i class="fas fa-plus-circle"></i> Create New Recipe</h1>
+                </div>
+                
+                <div class="create-recipe-content">
+                    <div class="recipe-privacy-toggle">
+                        <label class="privacy-toggle">
+                            <input type="checkbox" id="recipePrivacy" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">
+                                <i class="fas fa-globe"></i> Public Recipe
+                            </span>
+                        </label>
+                        <small>Public recipes can be seen by everyone. Private recipes are only visible to you.</small>
+                    </div>
+
+                    <div class="form-mode-toggle">
+                        <button type="button" id="basicModeBtn" class="mode-btn active">
+                            <i class="fas fa-coffee"></i> Basic Mode
+                        </button>
+                        <button type="button" id="proModeBtn" class="mode-btn">
+                            <i class="fas fa-cogs"></i> Professional Mode
+                        </button>
+                    </div>
+                    
+                    <form id="recipeForm" class="recipe-form">
+                        ${this.getRecipeFormHTML()}
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="app.goBack()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <span id="submitBtnText">Create Recipe</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        // Initialize form
+        this.setCurrentDate();
         this.setFormMode(false);
-        document.getElementById('submitBtnText').textContent = 'Create Recipe';
+        this.setupFormEventListeners();
     }
 
-    hideCreateRecipeModal() {
-        document.getElementById('createRecipeModal').classList.remove('show');
-        this.clearForm();
+    getRecipeFormHTML() {
+        return `
+            <div class="form-section">
+                <h2><i class="fas fa-tag"></i> Recipe Details</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recipeName">Recipe Name *</label>
+                        <input type="text" id="recipeName" name="recipeName" required placeholder="My Perfect Morning Brew">
+                    </div>
+                    <div class="form-group">
+                        <label for="rating">Rating (1-10) *</label>
+                        <input type="number" id="rating" name="rating" min="1" max="10" step="0.5" required placeholder="8.5">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description *</label>
+                    <textarea id="description" name="description" required placeholder="Describe your recipe and what makes it special..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="dateCreated">Date Created *</label>
+                    <input type="date" id="dateCreated" name="dateCreated" required>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2><i class="fas fa-seedling"></i> Bean Information</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="beanVariety">Bean Variety</label>
+                        <select id="beanVariety" name="beanVariety">
+                            <option value="">Select variety</option>
+                            <option value="arabica">Arabica</option>
+                            <option value="robusta">Robusta</option>
+                            <option value="liberica">Liberica</option>
+                            <option value="excelsa">Excelsa</option>
+                            <option value="bourbon">Bourbon</option>
+                            <option value="typica">Typica</option>
+                            <option value="caturra">Caturra</option>
+                            <option value="catuai">Catuai</option>
+                            <option value="mundo-novo">Mundo Novo</option>
+                            <option value="pacamara">Pacamara</option>
+                            <option value="maragogype">Maragogype</option>
+                            <option value="geisha">Geisha/Gesha</option>
+                            <option value="sv-315">SL-28/SL-34</option>
+                            <option value="java">Java</option>
+                            <option value="kona">Kona</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="beanRegion">Bean Region</label>
+                        <select id="beanRegion" name="beanRegion">
+                            <option value="">Select region</option>
+                            <option value="brazil">Brazil</option>
+                            <option value="colombia">Colombia</option>
+                            <option value="ethiopia">Ethiopia</option>
+                            <option value="guatemala">Guatemala</option>
+                            <option value="costa-rica">Costa Rica</option>
+                            <option value="honduras">Honduras</option>
+                            <option value="nicaragua">Nicaragua</option>
+                            <option value="panama">Panama</option>
+                            <option value="jamaica">Jamaica</option>
+                            <option value="hawaii">Hawaii</option>
+                            <option value="yemen">Yemen</option>
+                            <option value="kenya">Kenya</option>
+                            <option value="tanzania">Tanzania</option>
+                            <option value="rwanda">Rwanda</option>
+                            <option value="burundi">Burundi</option>
+                            <option value="uganda">Uganda</option>
+                            <option value="india">India</option>
+                            <option value="indonesia">Indonesia</option>
+                            <option value="vietnam">Vietnam</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="roastLevel">Roast Level</label>
+                        <select id="roastLevel" name="roastLevel">
+                            <option value="">Select roast</option>
+                            <option value="light">Light Roast</option>
+                            <option value="medium-light">Medium-Light Roast</option>
+                            <option value="medium">Medium Roast</option>
+                            <option value="medium-dark">Medium-Dark Roast</option>
+                            <option value="dark">Dark Roast</option>
+                            <option value="french">French Roast</option>
+                            <option value="italian">Italian Roast</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="processingMethod">Processing Method</label>
+                        <select id="processingMethod" name="processingMethod">
+                            <option value="">Select method</option>
+                            <option value="washed">Washed (Wet Process)</option>
+                            <option value="natural">Natural (Dry Process)</option>
+                            <option value="honey">Honey Process</option>
+                            <option value="semi-washed">Semi-Washed</option>
+                            <option value="wet-hulled">Wet-Hulled</option>
+                            <option value="carbonic-maceration">Carbonic Maceration</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section brewing-section">
+                <h2><i class="fas fa-fire"></i> Brewing Method</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="brewingMethod">Method *</label>
+                        <select id="brewingMethod" name="brewingMethod" required>
+                            <option value="">Select method</option>
+                            <option value="espresso">Espresso</option>
+                            <option value="drip">Drip Coffee</option>
+                            <option value="french-press">French Press</option>
+                            <option value="pour-over">Pour Over</option>
+                            <option value="aeropress">AeroPress</option>
+                            <option value="cold-brew">Cold Brew</option>
+                            <option value="turkish">Turkish Coffee</option>
+                            <option value="moka-pot">Moka Pot</option>
+                            <option value="chemex">Chemex</option>
+                            <option value="v60">V60</option>
+                            <option value="kalita-wave">Kalita Wave</option>
+                            <option value="siphon">Siphon</option>
+                            <option value="percolator">Percolator</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="grindSize">Grind Size</label>
+                        <select id="grindSize" name="grindSize">
+                            <option value="">Select grind</option>
+                            <option value="extra-coarse">Extra Coarse</option>
+                            <option value="coarse">Coarse</option>
+                            <option value="medium-coarse">Medium-Coarse</option>
+                            <option value="medium">Medium</option>
+                            <option value="medium-fine">Medium-Fine</option>
+                            <option value="fine">Fine</option>
+                            <option value="extra-fine">Extra Fine</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section pro-only">
+                <h2><i class="fas fa-flask"></i> Professional Parameters</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="coffeeWeight">Coffee Weight (g)</label>
+                        <input type="number" id="coffeeWeight" name="coffeeWeight" step="0.1" placeholder="18.0">
+                    </div>
+                    <div class="form-group">
+                        <label for="waterWeight">Water Weight (g)</label>
+                        <input type="number" id="waterWeight" name="waterWeight" step="1" placeholder="300">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="waterTemp">Water Temperature (°C)</label>
+                        <input type="number" id="waterTemp" name="waterTemp" step="1" placeholder="93">
+                    </div>
+                    <div class="form-group">
+                        <label for="brewTime">Brew Time (seconds)</label>
+                        <input type="number" id="brewTime" name="brewTime" step="1" placeholder="240">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tds">TDS (%)</label>
+                        <input type="number" id="tds" name="tds" step="0.01" placeholder="1.35">
+                    </div>
+                    <div class="form-group">
+                        <label for="extraction">Extraction (%)</label>
+                        <input type="number" id="extraction" name="extraction" step="0.1" placeholder="20.0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2><i class="fas fa-sticky-note"></i> Additional Notes</h2>
+                <div class="form-group">
+                    <label for="notes">Brewing Notes</label>
+                    <textarea id="notes" name="notes" placeholder="Any special techniques, observations, or tips..." rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="tastingNotes">Tasting Notes</label>
+                    <textarea id="tastingNotes" name="tastingNotes" placeholder="Flavor profile, aroma, body, acidity..." rows="3"></textarea>
+                </div>
+            </div>
+        `;
+    }
+
+    setupFormEventListeners() {
+        // Form submission
+        document.getElementById('recipeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleRecipeSubmit();
+        });
+
+        // Form mode toggle
+        const basicModeBtn = document.getElementById('basicModeBtn');
+        const proModeBtn = document.getElementById('proModeBtn');
+        
+        if (basicModeBtn) {
+            basicModeBtn.addEventListener('click', () => {
+                this.setFormMode(false);
+            });
+        }
+        
+        if (proModeBtn) {
+            proModeBtn.addEventListener('click', () => {
+                this.setFormMode(true);
+            });
+        }
     }
 
     clearForm() {
-        document.getElementById('recipeForm').reset();
+        const form = document.getElementById('recipeForm');
+        if (form) {
+            form.reset();
+        }
         this.currentEditingId = null;
         this.setCurrentDate();
         
         // Reset privacy toggle
-        document.getElementById('recipePrivacy').checked = true;
+        const privacyToggle = document.getElementById('recipePrivacy');
+        if (privacyToggle) {
+            privacyToggle.checked = true;
+        }
         this.updatePrivacyLabel(true);
         
         // Clear ratio display
@@ -1070,9 +1324,7 @@ class WhatYourRecipeApp {
                 this.showNotification('Recipe created successfully!', 'success');
             }
 
-            this.hideCreateRecipeModal();
-            this.feedPage = 0;
-            this.loadFeed();
+            this.goBack();
 
         } catch (error) {
             console.error('Error saving recipe:', error);
@@ -1407,7 +1659,7 @@ class WhatYourRecipeApp {
                         <i class="fas fa-hashtag"></i>
                         <h3>No recipes found for #${this.currentHashtag}</h3>
                         <p>Be the first to create a recipe with this hashtag!</p>
-                        <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                        <button class="btn btn-primary" onclick="app.showCreateRecipePage()">
                             Create Recipe
                         </button>
                     </div>
@@ -1599,7 +1851,7 @@ class WhatYourRecipeApp {
                                             ${followStatus.following ? 'Unfollow' : 'Follow'}
                                         </button>
                                     ` : `
-                                        <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                                        <button class="btn btn-primary" onclick="app.showCreateRecipePage()">
                                             <i class="fas fa-plus"></i> Create Recipe
                                         </button>
                                         <button class="btn btn-secondary" onclick="app.showSettings()">
@@ -1762,7 +2014,7 @@ class WhatYourRecipeApp {
                 <div class="my-recipes-header">
                     <h2><i class="fas fa-book"></i> My Recipes</h2>
                     <p>All the coffee recipes you've created</p>
-                    <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                    <button class="btn btn-primary" onclick="app.showCreateRecipePage()">
                         <i class="fas fa-plus"></i> Create New Recipe
                     </button>
                 </div>
@@ -1784,7 +2036,7 @@ class WhatYourRecipeApp {
                     <i class="fas fa-coffee"></i>
                     <h3>No recipes yet</h3>
                     <p>You haven't created any recipes yet. Start sharing your coffee expertise!</p>
-                    <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                    <button class="btn btn-primary" onclick="app.showCreateRecipePage()">
                         <i class="fas fa-plus"></i> Create Your First Recipe
                     </button>
                 </div>
@@ -1817,8 +2069,8 @@ class WhatYourRecipeApp {
             const recipe = await api.getRecipe(recipeId);
 
             this.currentEditingId = recipeId;
+            this.showCreateRecipePage();
             this.populateForm(recipe);
-            this.showCreateRecipeModal();
             document.getElementById('submitBtnText').textContent = 'Update Recipe';
 
         } catch (error) {

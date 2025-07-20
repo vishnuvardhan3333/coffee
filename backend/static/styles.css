@@ -2022,3 +2022,51 @@ body {
         margin: 0 1rem;
     }
 } 
+
+/* Create Recipe Page Styles */
+.create-recipe-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px var(--shadow);
+}
+
+.create-recipe-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border);
+}
+
+.create-recipe-header h1 {
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.create-recipe-content {
+    padding: 0;
+}
+
+.create-recipe-page .recipe-form {
+    margin: 0;
+}
+
+.create-recipe-page .form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.create-recipe-page .form-actions .btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    min-width: 120px;
+}
