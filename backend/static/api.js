@@ -171,6 +171,10 @@ class APIClient {
         return await this.request(`/user-stats/${userId}`);
     }
 
+    async getUserRecipes(userId, page = 1, limit = 20) {
+        return await this.request(`/users/${userId}/recipes?page=${page}&limit=${limit}`);
+    }
+
     // Save recipe endpoints
     async saveRecipe(recipeId) {
         return await this.request(`/save-recipe/${recipeId}`, {

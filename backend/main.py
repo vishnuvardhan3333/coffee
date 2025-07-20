@@ -439,10 +439,13 @@ async def get_recipe(recipe_id: str):
 async def search_recipes(query: str, limit: int = 10):
     try:
         result = supabase.table("recipes").select("""
-            *, profiles!recipes_user_id_fkey(username, full_name, avatar_url)
-        """).or_(f"title.ilike.%{query}%,coffee_name.ilike.%{query}%,tasting_notes.ilike.%{query}%").eq("is_public", True).limit(limit).execute()
-        return result.data
+            *, 
+            profiles!recipes_user_id_fkey(id, username, full_name, avatar_url),
+            recipe_votes(vote_type, user_id)
+        """).or_(f"recipe_name.ilike.%{query}%,description.ilike.%{query}%,brewing_notes.ilike.%{query}%").eq("is_public", True).limit(limit).execute()
+        return result.data or []
     except Exception as e:
+        print(f"Recipe search error: {e}")
         return []
 
 # Voting endpoints
@@ -533,6 +536,23 @@ async def get_user_stats(user_id: str):
     except Exception as e:
         print(f"User stats error: {e}")
         return {"followers_count": 0, "following_count": 0, "recipes_count": 0}
+
+# Get user's recipes
+@app.get("/users/{user_id}/recipes")
+async def get_user_recipes(user_id: str, page: int = 1, limit: int = 20):
+    try:
+        offset = (page - 1) * limit
+        
+        result = supabase.table("recipes").select("""
+            *, 
+            profiles!recipes_user_id_fkey(id, username, full_name, avatar_url),
+            recipe_votes(vote_type, user_id)
+        """).eq("user_id", user_id).eq("is_public", True).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+        
+        return result.data or []
+    except Exception as e:
+        print(f"Error getting user recipes: {e}")
+        return []
 
 # Serve the frontend at root
 @app.get("/")

@@ -153,6 +153,18 @@ class WhatYourRecipeApp {
             this.handleLogout();
         });
 
+        document.getElementById('viewProfile').addEventListener('click', () => {
+            this.showUserProfile(this.currentUser.id);
+        });
+
+        document.getElementById('myRecipes').addEventListener('click', () => {
+            this.showMyRecipes();
+        });
+
+        document.getElementById('settings').addEventListener('click', () => {
+            this.showSettings();
+        });
+
         // Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', () => {
@@ -353,8 +365,32 @@ class WhatYourRecipeApp {
             basicBtn.classList.add('active');
         }
 
-        // Refresh feed with new view mode
-        this.loadFeed();
+        // Update all recipe cards with new view mode
+        const feedContent = document.getElementById('feedContent');
+        const recipeCards = feedContent.querySelectorAll('.recipe-card');
+        
+        recipeCards.forEach(card => {
+            const detailsContainer = card.querySelector('.recipe-details');
+            if (detailsContainer) {
+                // Re-render the recipe details with new view mode
+                const recipeId = card.dataset.recipeId;
+                // Find the recipe data and update the details
+                this.updateRecipeCardDetails(card, isProMode);
+            }
+        });
+    }
+
+    updateRecipeCardDetails(card, isProMode) {
+        const detailsContainer = card.querySelector('.recipe-details');
+        if (!detailsContainer) return;
+
+        // Get recipe data from the card's dataset
+        const recipeData = JSON.parse(card.dataset.recipeData || '{}');
+        
+        // Update the details with appropriate view mode
+        detailsContainer.innerHTML = isProMode 
+            ? this.createProRecipeDetails(recipeData)
+            : this.createBasicRecipeDetails(recipeData);
     }
 
     setFormMode(isProMode) {
@@ -471,6 +507,8 @@ class WhatYourRecipeApp {
     createRecipeCard(recipe) {
         const card = document.createElement('div');
         card.className = 'recipe-card';
+        card.dataset.recipeId = recipe.id;
+        card.dataset.recipeData = JSON.stringify(recipe);
         
         const formatDate = (dateString) => {
             return new Date(dateString).toLocaleDateString('en-US', {
@@ -1044,7 +1082,10 @@ class WhatYourRecipeApp {
     }
 
     async handleSearch(query) {
-        if (query.trim().length < 2) return;
+        if (query.trim().length < 2) {
+            this.hideSearchResults();
+            return;
+        }
 
         try {
             const [recipes, users] = await Promise.all([
@@ -1052,20 +1093,236 @@ class WhatYourRecipeApp {
                 api.searchUsers(query, 5)
             ]);
 
-            this.showSearchResults(recipes || [], users || []);
+            this.showSearchResults(recipes || [], users || [], query);
         } catch (error) {
             console.error('Search error:', error);
         }
     }
 
-    showSearchResults(recipes, users) {
-        // Implementation for showing search results in a dropdown or modal
-        console.log('Search results:', { recipes, users });
+    showSearchResults(recipes, users, query) {
+        const modal = document.getElementById('searchModal');
+        const content = document.getElementById('searchResults');
+        const title = modal.querySelector('.modal-header h2');
+        
+        title.textContent = `Search Results for "${query}"`;
+
+        let html = '';
+
+        // Users section
+        if (users.length > 0) {
+            html += `
+                <div class="search-section">
+                    <h3><i class="fas fa-users"></i> Users</h3>
+                    <div class="search-users">
+                        ${users.map(user => `
+                            <div class="search-user-item" onclick="app.showUserProfile('${user.id}')">
+                                <div class="search-avatar">
+                                    ${user.avatar_url 
+                                        ? `<img src="${user.avatar_url}" alt="Avatar">`
+                                        : (user.full_name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U')
+                                    }
+                                </div>
+                                <div class="search-user-info">
+                                    <div class="name">${user.full_name || user.username}</div>
+                                    <div class="username">@${user.username}</div>
+                                    ${user.bio ? `<div class="bio">${user.bio.substring(0, 80)}...</div>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Recipes section
+        if (recipes.length > 0) {
+            html += `
+                <div class="search-section">
+                    <h3><i class="fas fa-coffee"></i> Recipes</h3>
+                    <div class="search-recipes">
+                        ${recipes.map(recipe => `
+                            <div class="search-recipe-item" onclick="app.showRecipeDetail('${recipe.id}')">
+                                <div class="search-recipe-info">
+                                    <h4>${recipe.recipe_name}</h4>
+                                    <p>${recipe.description.substring(0, 100)}...</p>
+                                    <div class="search-recipe-meta">
+                                        <span>⭐ ${recipe.rating || 'N/A'}</span>
+                                        <span>by ${recipe.profiles?.full_name || recipe.profiles?.username || 'Anonymous'}</span>
+                                        <span>${new Date(recipe.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (users.length === 0 && recipes.length === 0) {
+            html = `
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <h3>No results found</h3>
+                    <p>Try different keywords or check your spelling.</p>
+                </div>
+            `;
+        }
+
+        content.innerHTML = html;
+        modal.classList.add('show');
     }
 
-    showUserProfile(userId) {
-        // Implementation for showing user profile modal
-        console.log('Show user profile:', userId);
+    hideSearchResults() {
+        const modal = document.getElementById('searchModal');
+        modal.classList.remove('show');
+    }
+
+    async showUserProfile(userId) {
+        try {
+            const [userProfile, userStats] = await Promise.all([
+                api.getUserById(userId),
+                api.getUserStats(userId)
+            ]);
+
+            const modal = document.getElementById('userProfileModal');
+            const content = document.getElementById('profileModalContent');
+            const title = document.getElementById('profileModalTitle');
+
+            title.textContent = userProfile.full_name || userProfile.username;
+
+            // Check if current user is viewing their own profile
+            const isOwnProfile = userId === this.currentUser?.id;
+            
+            // Get follow status if not own profile
+            let followStatus = { following: false };
+            if (!isOwnProfile) {
+                followStatus = await api.getFollowStatus(userId);
+            }
+
+            content.innerHTML = `
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        ${userProfile.avatar_url 
+                            ? `<img src="${userProfile.avatar_url}" alt="Avatar">`
+                            : (userProfile.full_name?.charAt(0)?.toUpperCase() || userProfile.username?.charAt(0)?.toUpperCase() || 'U')
+                        }
+                    </div>
+                    <div class="profile-info">
+                        <h2>${userProfile.full_name || userProfile.username}</h2>
+                        <p class="username">@${userProfile.username}</p>
+                        ${userProfile.bio ? `<p class="bio">${userProfile.bio}</p>` : ''}
+                        <div class="profile-stats">
+                            <span><strong>${userStats.recipes_count}</strong> Recipes</span>
+                            <span><strong>${userStats.followers_count}</strong> Followers</span>
+                            <span><strong>${userStats.following_count}</strong> Following</span>
+                        </div>
+                        ${!isOwnProfile ? `
+                            <button class="btn ${followStatus.following ? 'btn-secondary' : 'btn-primary'}" 
+                                    onclick="app.toggleFollow('${userId}', this)">
+                                ${followStatus.following ? 'Unfollow' : 'Follow'}
+                            </button>
+                        ` : `
+                            <button class="btn btn-primary" onclick="app.showSettings()">
+                                Edit Profile
+                            </button>
+                        `}
+                    </div>
+                </div>
+                <div class="profile-recipes">
+                    <h3>Recent Recipes</h3>
+                    <div id="userRecipes">Loading recipes...</div>
+                </div>
+            `;
+
+            modal.classList.add('show');
+
+            // Load user's recipes
+            this.loadUserRecipes(userId);
+
+        } catch (error) {
+            console.error('Error loading user profile:', error);
+            this.showNotification('Error loading profile', 'error');
+        }
+    }
+
+    async loadUserRecipes(userId) {
+        try {
+            const recipes = await api.getUserRecipes(userId);
+            const container = document.getElementById('userRecipes');
+            
+            if (recipes && recipes.length > 0) {
+                container.innerHTML = recipes.slice(0, 6).map(recipe => `
+                    <div class="mini-recipe-card" onclick="app.showRecipeDetail('${recipe.id}')">
+                        <h4>${recipe.recipe_name}</h4>
+                        <p>${recipe.description.substring(0, 100)}...</p>
+                        <div class="mini-recipe-meta">
+                            <span>⭐ ${recipe.rating || 'N/A'}</span>
+                            <span>${new Date(recipe.created_at).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p>No recipes yet.</p>';
+            }
+        } catch (error) {
+            console.error('Error loading user recipes:', error);
+            document.getElementById('userRecipes').innerHTML = '<p>Error loading recipes.</p>';
+        }
+    }
+
+    async toggleFollow(userId, button) {
+        try {
+            const response = await api.followUser(userId);
+            button.textContent = response.following ? 'Unfollow' : 'Follow';
+            button.className = response.following ? 'btn btn-secondary' : 'btn btn-primary';
+            this.showNotification(response.message, 'success');
+        } catch (error) {
+            console.error('Error toggling follow:', error);
+            this.showNotification('Error updating follow status', 'error');
+        }
+    }
+
+    showMyRecipes() {
+        // Filter current view to only show user's own recipes
+        this.currentView = 'my-recipes';
+        this.feedPage = 0;
+        this.loadMyRecipesFeed();
+    }
+
+    async loadMyRecipesFeed() {
+        const feedContent = document.getElementById('feedContent');
+        feedContent.innerHTML = '<div class="loading-placeholder">Loading your recipes...</div>';
+
+        try {
+            const recipes = await api.getUserRecipes(this.currentUser.id);
+            
+            feedContent.innerHTML = '';
+            
+            if (recipes && recipes.length > 0) {
+                recipes.forEach(recipe => {
+                    feedContent.appendChild(this.createRecipeCard(recipe));
+                });
+            } else {
+                feedContent.innerHTML = `
+                    <div class="empty-feed">
+                        <i class="fas fa-coffee"></i>
+                        <h3>No recipes yet</h3>
+                        <p>Start creating your first coffee recipe!</p>
+                        <button class="btn btn-primary" onclick="app.showCreateRecipeModal()">
+                            Create Recipe
+                        </button>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading my recipes:', error);
+            feedContent.innerHTML = '<div class="error-message">Error loading your recipes.</div>';
+        }
+    }
+
+    showSettings() {
+        this.showNotification('Settings page coming soon!', 'info');
+        // TODO: Implement settings modal with profile editing
     }
 
     showRecipeDetail(recipeId) {
