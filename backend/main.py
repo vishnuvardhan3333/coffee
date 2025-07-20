@@ -169,11 +169,12 @@ class Vote(BaseModel):
 def get_current_user(token: str = Depends(security)):
     try:
         # Verify JWT token with Supabase
-        user = supabase.auth.get_user(token.credentials)
-        if not user.user:
+        response = supabase.auth.get_user(token.credentials)
+        if not response or not hasattr(response, 'user') or not response.user:
             raise HTTPException(status_code=401, detail="Invalid token")
-        return user.user
+        return response.user
     except Exception as e:
+        print(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def verify_user_access(user_id: str, current_user):
