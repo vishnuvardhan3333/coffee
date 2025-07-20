@@ -175,6 +175,14 @@ class APIClient {
         return await this.request(`/users/${userId}/recipes?page=${page}&limit=${limit}`);
     }
 
+    async getRecommendedUsers(limit = 5) {
+        return await this.request(`/recommended-users?limit=${limit}`);
+    }
+
+    async getActivityFeed(limit = 10) {
+        return await this.request(`/activity-feed?limit=${limit}`);
+    }
+
     // Save recipe endpoints
     async saveRecipe(recipeId) {
         return await this.request(`/save-recipe/${recipeId}`, {

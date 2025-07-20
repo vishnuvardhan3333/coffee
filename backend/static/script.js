@@ -1047,38 +1047,155 @@ class WhatYourRecipeApp {
     }
 
     async loadRecommendedUsers() {
-        // For now, just show some placeholder users
-        const recommendedUsers = document.getElementById('recommendedUsers');
-        recommendedUsers.innerHTML = `
-            <div class="recommended-user">
-                <div class="avatar">CB</div>
-                <div class="info">
-                    <div class="name">Coffee Barista</div>
-                    <div class="username">@coffeebarista</div>
+        if (!this.currentUser) return;
+
+        try {
+            const recommendations = await api.getRecommendedUsers();
+            const recommendedUsers = document.getElementById('recommendedUsers');
+            
+            if (recommendations && recommendations.length > 0) {
+                recommendedUsers.innerHTML = recommendations.map(user => `
+                    <div class="recommended-user" onclick="app.showUserProfile('${user.id}')">
+                        <div class="avatar">
+                            ${user.avatar_url 
+                                ? `<img src="${user.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
+                                : (user.full_name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U')
+                            }
+                        </div>
+                        <div class="info">
+                            <div class="name">${user.full_name || user.username}</div>
+                            <div class="username">@${user.username}</div>
+                        </div>
+                        <button class="follow-btn" onclick="event.stopPropagation(); app.quickFollow('${user.id}', this)">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                recommendedUsers.innerHTML = `
+                    <div class="no-recommendations">
+                        <p>No recommendations yet. Start following users and voting on recipes to see personalized suggestions!</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading recommended users:', error);
+            document.getElementById('recommendedUsers').innerHTML = `
+                <div class="recommendation-error">
+                    <p>Unable to load recommendations</p>
                 </div>
-            </div>
-            <div class="recommended-user">
-                <div class="avatar">JD</div>
-                <div class="info">
-                    <div class="name">Java Developer</div>
-                    <div class="username">@javadev</div>
-                </div>
-            </div>
-        `;
+            `;
+        }
+    }
+
+    async quickFollow(userId, button) {
+        try {
+            const response = await api.followUser(userId);
+            if (response.following) {
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                button.classList.add('followed');
+                this.showNotification('User followed!', 'success');
+                
+                // Remove from recommendations after following
+                setTimeout(() => {
+                    button.closest('.recommended-user').remove();
+                }, 1000);
+            }
+        } catch (error) {
+            console.error('Error following user:', error);
+            this.showNotification('Error following user', 'error');
+        }
     }
 
     async loadActivityFeed() {
-        const activityFeed = document.getElementById('activityFeed');
-        activityFeed.innerHTML = `
-            <div class="activity-item">
-                <div class="icon"><i class="fas fa-heart"></i></div>
-                <div class="content">Someone liked your espresso recipe</div>
-            </div>
-            <div class="activity-item">
-                <div class="icon"><i class="fas fa-user-plus"></i></div>
-                <div class="content">CoffeeExpert started following you</div>
-            </div>
-        `;
+        if (!this.currentUser) return;
+
+        try {
+            const activities = await api.getActivityFeed();
+            const activityFeed = document.getElementById('activityFeed');
+            
+            if (activities && activities.length > 0) {
+                activityFeed.innerHTML = activities.map(activity => {
+                    const timeAgo = this.formatTimeAgo(activity.created_at);
+                    
+                    switch (activity.activity_type) {
+                        case 'like':
+                            return `
+                                <div class="activity-item">
+                                    <div class="icon heart"><i class="fas fa-heart"></i></div>
+                                    <div class="content">
+                                        <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
+                                        liked your recipe 
+                                        <strong>${activity.recipe?.recipe_name}</strong>
+                                        <div class="activity-time">${timeAgo}</div>
+                                    </div>
+                                </div>
+                            `;
+                        case 'follow':
+                            return `
+                                <div class="activity-item">
+                                    <div class="icon follow"><i class="fas fa-user-plus"></i></div>
+                                    <div class="content">
+                                        <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
+                                        started following you
+                                        <div class="activity-time">${timeAgo}</div>
+                                    </div>
+                                </div>
+                            `;
+                        case 'create_recipe':
+                            return `
+                                <div class="activity-item">
+                                    <div class="icon recipe"><i class="fas fa-coffee"></i></div>
+                                    <div class="content">
+                                        <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
+                                        created a new recipe: 
+                                        <strong>${activity.content}</strong>
+                                        <div class="activity-time">${timeAgo}</div>
+                                    </div>
+                                </div>
+                            `;
+                        default:
+                            return `
+                                <div class="activity-item">
+                                    <div class="icon"><i class="fas fa-bell"></i></div>
+                                    <div class="content">
+                                        <strong>${activity.user_profile?.full_name || activity.user_profile?.username}</strong> 
+                                        ${activity.content || 'had some activity'}
+                                        <div class="activity-time">${timeAgo}</div>
+                                    </div>
+                                </div>
+                            `;
+                    }
+                }).join('');
+            } else {
+                activityFeed.innerHTML = `
+                    <div class="no-activity">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No recent activity</p>
+                        <small>Follow users and interact with recipes to see activity here!</small>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading activity feed:', error);
+            document.getElementById('activityFeed').innerHTML = `
+                <div class="activity-error">
+                    <p>Unable to load activity feed</p>
+                </div>
+            `;
+        }
+    }
+
+    formatTimeAgo(dateString) {
+        const now = new Date();
+        const date = new Date(dateString);
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+        return date.toLocaleDateString();
     }
 
     async handleSearch(query) {
