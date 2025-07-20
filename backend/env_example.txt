@@ -1,10 +1,12 @@
+# Copy this file to .env and fill in your actual values
+
 # Supabase Configuration
 SUPABASE_URL=https://kaydtzseywecnwjrzjxe.supabase.co
-SUPABASE_SERVICE_KEY=your_supabase_service_key_here
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheWR0enNleXdlY253anJ6anhlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzAwMTE1MCwiZXhwIjoyMDY4NTc3MTUwfQ.Y4e6MCTzpxZdryQD0MKm7ZCRwwZyDxds2tZaOKJoVKQ
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheWR0enNleXdlY253anJ6anhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwMDExNTAsImV4cCI6MjA2ODU3NzE1MH0.UXvRuE33HiM34wPqJ6c2dtdJkOnAPJjG12BEkx7ZoKI
 
 # Frontend URLs (comma-separated for CORS)
-FRONTEND_URLS=http://localhost:3000,https://yourusername.github.io,http://127.0.0.1:5500
+FRONTEND_URLS=http://localhost:3000,https://vishnuvardhan33.github.io,http://127.0.0.1:5500
 
 # Server Configuration
 PORT=8000
@@ -12,7 +14,7 @@ HOST=0.0.0.0
 DEBUG=true
 
 # JWT Configuration (optional - Supabase handles this)
-JWT_SECRET_KEY=your_jwt_secret_here
+JWT_SECRET_KEY=a1AklPmIW09o3OmAL5cRL9grvUpCHm/KR2LDJ+y12OxmANxUNcowwuDGTq1/kr+KWn5cu8M1NlWxlfx4vhxWcA==
 
 # Database Configuration (if using direct PostgreSQL)
 DATABASE_URL=postgresql://postgres:SidemeNFaN6969@db.kaydtzseywecnwjrzjxe.supabase.co:5432/postgres 
