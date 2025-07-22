@@ -260,6 +260,16 @@ class WhatYourRecipeApp {
             this.loadMoreRecipes();
         });
 
+        // Profile editing
+        document.getElementById('editProfileForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleEditProfile();
+        });
+
+        document.getElementById('avatarUpload').addEventListener('change', (e) => {
+            this.handleAvatarUpload(e);
+        });
+
         // Set current date
         this.setCurrentDate();
     }
@@ -627,6 +637,9 @@ class WhatYourRecipeApp {
         card.dataset.recipeId = recipe.id;
         card.dataset.recipeData = JSON.stringify(recipe);
         
+        // Debug: Log recipe ID to verify it's correct
+        console.log('Creating recipe card with ID:', recipe.id);
+        
         const formatDate = (dateString) => {
             return new Date(dateString).toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -932,15 +945,14 @@ class WhatYourRecipeApp {
         this.currentEditingId = null;
         
         feedContent.innerHTML = `
-            <div class="create-recipe-page">
-                <div class="create-recipe-header">
+            <div class="create-recipe-page-extended">
+                <div class="create-recipe-header-fixed">
                     <button class="back-btn" onclick="app.goBack()">
                         <i class="fas fa-arrow-left"></i> Back
                     </button>
                     <h1><i class="fas fa-plus-circle"></i> Create New Recipe</h1>
-                </div>
                 
-                <div class="create-recipe-content">
+                    <div class="header-controls">
                     <div class="recipe-privacy-toggle">
                         <label class="privacy-toggle">
                             <input type="checkbox" id="recipePrivacy" checked>
@@ -949,7 +961,6 @@ class WhatYourRecipeApp {
                                 <i class="fas fa-globe"></i> Public Recipe
                             </span>
                         </label>
-                        <small>Public recipes can be seen by everyone. Private recipes are only visible to you.</small>
                     </div>
 
                     <div class="form-mode-toggle">
@@ -959,12 +970,15 @@ class WhatYourRecipeApp {
                         <button type="button" id="proModeBtn" class="mode-btn">
                             <i class="fas fa-cogs"></i> Professional Mode
                         </button>
+                        </div>
+                    </div>
                     </div>
                     
-                    <form id="recipeForm" class="recipe-form">
+                <div class="create-recipe-form-container">
+                    <form id="recipeForm" class="recipe-form-extended">
                         ${this.getRecipeFormHTML()}
                         
-                        <div class="form-actions">
+                        <div class="form-actions-fixed">
                             <button type="button" class="btn btn-secondary" onclick="app.goBack()">Cancel</button>
                             <button type="submit" class="btn btn-primary">
                                 <span id="submitBtnText">Create Recipe</span>
@@ -1686,7 +1700,7 @@ class WhatYourRecipeApp {
 
     async handleSearch(query) {
         if (query.trim().length < 2) {
-            this.hideSearchResults();
+            this.hideSearchDropdown();
             return;
         }
 
@@ -1696,18 +1710,14 @@ class WhatYourRecipeApp {
                 api.searchUsers(query, 5)
             ]);
 
-            this.showSearchResults(recipes || [], users || [], query);
+            this.showSearchDropdown(recipes || [], users || []);
         } catch (error) {
             console.error('Search error:', error);
         }
     }
 
-    showSearchResults(recipes, users, query) {
-        const modal = document.getElementById('searchModal');
-        const content = document.getElementById('searchResults');
-        const title = modal.querySelector('.modal-header h2');
-        
-        title.textContent = `Search Results for "${query}"`;
+    showSearchDropdown(recipes, users) {
+        const dropdown = document.getElementById('searchDropdown');
 
         let html = '';
 
@@ -1715,24 +1725,23 @@ class WhatYourRecipeApp {
         if (users.length > 0) {
             html += `
                 <div class="search-section">
-                    <h3><i class="fas fa-users"></i> Users</h3>
-                    <div class="search-users">
+                    <div class="search-section-header">
+                        <i class="fas fa-users"></i> Users
+                    </div>
                         ${users.map(user => `
-                            <div class="search-user-item" onclick="app.showUserProfile('${user.id}')">
-                                <div class="search-avatar">
+                        <div class="search-dropdown-item" onclick="app.showUserProfile('${user.id}'); app.hideSearchDropdown(); document.getElementById('searchInput').value = '';">
+                            <div class="search-item-avatar">
                                     ${user.avatar_url 
                                         ? `<img src="${user.avatar_url}" alt="Avatar">`
-                                        : (user.full_name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U')
+                                    : `<span>${user.full_name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U'}</span>`
                                     }
                                 </div>
-                                <div class="search-user-info">
-                                    <div class="name">${user.full_name || user.username}</div>
-                                    <div class="username">@${user.username}</div>
-                                    ${user.bio ? `<div class="bio">${user.bio.substring(0, 80)}...</div>` : ''}
+                            <div class="search-item-info">
+                                <div class="search-item-name">${user.full_name || user.username}</div>
+                                <div class="search-item-username">@${user.username}</div>
                                 </div>
                             </div>
                         `).join('')}
-                    </div>
                 </div>
             `;
         }
@@ -1741,43 +1750,42 @@ class WhatYourRecipeApp {
         if (recipes.length > 0) {
             html += `
                 <div class="search-section">
-                    <h3><i class="fas fa-coffee"></i> Recipes</h3>
-                    <div class="search-recipes">
+                    <div class="search-section-header">
+                        <i class="fas fa-coffee"></i> Recipes
+                    </div>
                         ${recipes.map(recipe => `
-                            <div class="search-recipe-item" onclick="app.showRecipeDetail('${recipe.id}')">
-                                <div class="search-recipe-info">
-                                    <h4>${recipe.recipe_name}</h4>
-                                    <p>${recipe.description.substring(0, 100)}...</p>
-                                    <div class="search-recipe-meta">
-                                        <span>⭐ ${recipe.rating || 'N/A'}</span>
-                                        <span>by ${recipe.profiles?.username || recipe.profiles?.full_name || 'Anonymous'}</span>
-                                        <span>${new Date(recipe.created_at).toLocaleDateString()}</span>
+                        <div class="search-dropdown-item" onclick="app.showRecipeDetail('${recipe.id}'); app.hideSearchDropdown(); document.getElementById('searchInput').value = '';">
+                            <div class="search-item-icon">
+                                <i class="fas fa-coffee"></i>
+                            </div>
+                            <div class="search-item-info">
+                                <div class="search-item-name">${recipe.recipe_name}</div>
+                                <div class="search-item-meta">
+                                    ⭐ ${recipe.rating || 'N/A'} • by ${recipe.profiles?.username || recipe.profiles?.full_name || 'Anonymous'}
                                     </div>
                                 </div>
                             </div>
                         `).join('')}
-                    </div>
                 </div>
             `;
         }
 
         if (users.length === 0 && recipes.length === 0) {
             html = `
-                <div class="no-results">
+                <div class="search-no-results">
                     <i class="fas fa-search"></i>
-                    <h3>No results found</h3>
-                    <p>Try different keywords or check your spelling.</p>
+                    <span>No results found</span>
                 </div>
             `;
         }
 
-        content.innerHTML = html;
-        modal.classList.add('show');
+        dropdown.innerHTML = html;
+        dropdown.classList.add('show');
     }
 
-    hideSearchResults() {
-        const modal = document.getElementById('searchModal');
-        modal.classList.remove('show');
+    hideSearchDropdown() {
+        const dropdown = document.getElementById('searchDropdown');
+        dropdown.classList.remove('show');
     }
 
     async showUserProfile(userId) {
@@ -2055,13 +2063,297 @@ class WhatYourRecipeApp {
     }
 
     showSettings() {
-        this.showNotification('Settings page coming soon!', 'info');
-        // TODO: Implement settings modal with profile editing
+        // Close user dropdown
+        this.toggleUserDropdown();
+        
+        if (!this.currentUser) return;
+        
+        const modal = document.getElementById('editProfileModal');
+        
+        // Populate current user data
+        document.getElementById('editFullName').value = this.currentUser.full_name || '';
+        document.getElementById('editUsername').value = this.currentUser.username || '';
+        document.getElementById('editBio').value = this.currentUser.bio || '';
+        
+        // Show current avatar
+        const avatarPreview = document.getElementById('avatarPreview');
+        if (this.currentUser.avatar_url) {
+            avatarPreview.innerHTML = `<img src="${this.currentUser.avatar_url}" alt="Current Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        } else {
+            const initials = this.currentUser.full_name?.charAt(0).toUpperCase() || this.currentUser.username?.charAt(0).toUpperCase() || 'U';
+            avatarPreview.innerHTML = `<span>${initials}</span>`;
+        }
+        
+        modal.classList.add('show');
     }
 
-    showRecipeDetail(recipeId) {
-        // Implementation for showing recipe detail modal
-        console.log('Show recipe detail:', recipeId);
+    async showRecipeDetail(recipeId) {
+        console.log('Opening recipe detail for ID:', recipeId);
+        
+        if (!recipeId) {
+            console.error('Recipe ID is missing');
+            this.showNotification('Error: Recipe ID is missing', 'error');
+            return;
+        }
+        
+        const modal = document.getElementById('recipeDetailModal');
+        const content = document.getElementById('recipeDetailContent');
+        
+        if (!modal) {
+            console.error('Recipe detail modal not found');
+            this.showNotification('Error: Modal not found', 'error');
+            return;
+        }
+        
+        if (!content) {
+            console.error('Recipe detail content not found');
+            this.showNotification('Error: Content container not found', 'error');
+            return;
+        }
+        
+        try {
+            console.log('Fetching recipe data...');
+            const recipe = await api.getRecipe(recipeId);
+            console.log('Recipe data received:', recipe);
+            
+                        const formatDate = (dateString) => {
+                return new Date(dateString).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            };
+
+            const getRatingStars = (rating) => {
+                if (!rating) return '';
+                const numRating = parseInt(rating);
+                const stars = '⭐'.repeat(Math.min(numRating, 10));
+                return `${stars} (${rating}/10)`;
+            };
+
+            const formatFieldName = (fieldName) => {
+                return fieldName
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase())
+                    .trim();
+            };
+
+            content.innerHTML = `
+                <div class="recipe-detail-header">
+                    <div class="recipe-author">
+                        <div class="avatar">
+                            ${recipe.profiles?.avatar_url 
+                                ? `<img src="${recipe.profiles.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
+                                : (recipe.profiles?.username?.charAt(0)?.toUpperCase() || recipe.profiles?.full_name?.charAt(0)?.toUpperCase() || 'U')
+                            }
+                        </div>
+                        <div class="info">
+                            <div class="name">${recipe.profiles?.username || recipe.profiles?.full_name || 'Anonymous Chef'}</div>
+                            <div class="time">${formatDate(recipe.created_at)}</div>
+                        </div>
+                    </div>
+                    <div class="recipe-privacy">
+                        <i class="fas fa-${recipe.is_public ? 'globe' : 'lock'}"></i>
+                        ${recipe.is_public ? 'Public' : 'Private'}
+                    </div>
+                </div>
+
+                <div class="recipe-detail-content">
+                    <h1 class="recipe-title">${recipe.recipe_name}</h1>
+                    <p class="recipe-description">${recipe.description}</p>
+                    
+                    ${recipe.rating ? `<div class="recipe-rating-large">${getRatingStars(recipe.rating)}</div>` : ''}
+                    
+                    <div class="recipe-details-grid">
+                        ${recipe.bean_variety || recipe.bean_region ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-seedling"></i> Bean</div>
+                            <div class="value">
+                                ${recipe.bean_variety ? formatFieldName(recipe.bean_variety) : ''}${recipe.bean_variety && recipe.bean_region ? ' from ' : ''}${recipe.bean_region ? formatFieldName(recipe.bean_region) : ''}${recipe.india_estate ? ` (${formatFieldName(recipe.india_estate)})` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${recipe.processing_type ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-cogs"></i> Processing</div>
+                            <div class="value">${formatFieldName(recipe.processing_type)}</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${recipe.roast_level ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-fire"></i> Roast Level</div>
+                            <div class="value">${formatFieldName(recipe.roast_level)}</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${recipe.brew_method ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-coffee"></i> Brew Method</div>
+                            <div class="value">${formatFieldName(recipe.brew_method)}</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${recipe.grind_microns ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-cog"></i> Grind Size</div>
+                            <div class="value">${recipe.grind_microns}μm</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${recipe.coffee_amount && recipe.water_amount ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-balance-scale"></i> Ratio</div>
+                            <div class="value">${recipe.coffee_amount}g : ${recipe.water_amount}ml</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${recipe.water_temp ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-thermometer-half"></i> Water Temp</div>
+                            <div class="value">${recipe.water_temp}°C</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${recipe.brew_time ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-clock"></i> Brew Time</div>
+                            <div class="value">${recipe.brew_time} min</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${recipe.tds ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-flask"></i> TDS</div>
+                            <div class="value">${recipe.tds} ppm</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${recipe.cupping_score ? `
+                        <div class="recipe-detail-item">
+                            <div class="label"><i class="fas fa-star"></i> Cupping Score</div>
+                            <div class="value">${recipe.cupping_score}/100</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${recipe.brewing_notes ? `
+                    <div class="recipe-notes">
+                        <h3><i class="fas fa-sticky-note"></i> Brewing Notes</h3>
+                        <p>${recipe.brewing_notes}</p>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            modal.classList.add('show');
+            
+        } catch (error) {
+            console.error('Error loading recipe detail:', error);
+            console.error('Recipe ID:', recipeId);
+            console.error('Error details:', error.message);
+            
+            // Try to get cached recipe data from the card as fallback
+            console.log('Trying to use cached recipe data...');
+            const recipeCard = document.querySelector(`[data-recipe-id="${recipeId}"]`);
+            if (recipeCard && recipeCard.dataset.recipeData) {
+                try {
+                    const cachedRecipe = JSON.parse(recipeCard.dataset.recipeData);
+                    console.log('Using cached recipe data:', cachedRecipe);
+                    
+                    // Use same display logic but with cached data  
+                    const formatDate = (dateString) => {
+                        return new Date(dateString).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short', 
+                            day: 'numeric'
+                        });
+                    };
+
+                    const getRatingStars = (rating) => {
+                        if (!rating) return '';
+                        const numRating = parseInt(rating);
+                        const stars = '⭐'.repeat(Math.min(numRating, 10));
+                        return `${stars} (${rating}/10)`;
+                    };
+
+                    const formatFieldName = (fieldName) => {
+                        return fieldName
+                            .replace(/([A-Z])/g, ' $1')
+                            .replace(/^./, str => str.toUpperCase())
+                            .trim();
+                    };
+
+                    content.innerHTML = `
+                        <div class="recipe-detail-header">
+                            <div class="recipe-author">
+                                <div class="avatar">
+                                    ${cachedRecipe.profiles?.avatar_url 
+                                        ? `<img src="${cachedRecipe.profiles.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
+                                        : (cachedRecipe.profiles?.username?.charAt(0)?.toUpperCase() || cachedRecipe.profiles?.full_name?.charAt(0)?.toUpperCase() || 'U')
+                                    }
+                                </div>
+                                <div class="info">
+                                    <div class="name">${cachedRecipe.profiles?.username || cachedRecipe.profiles?.full_name || 'Anonymous Chef'}</div>
+                                    <div class="time">${formatDate(cachedRecipe.created_at)}</div>
+                                </div>
+                            </div>
+                            <div class="recipe-privacy">
+                                <i class="fas fa-${cachedRecipe.is_public ? 'globe' : 'lock'}"></i>
+                                ${cachedRecipe.is_public ? 'Public' : 'Private'}
+                            </div>
+                        </div>
+                        <div class="recipe-detail-content">
+                            <h1 class="recipe-title">${cachedRecipe.recipe_name}</h1>
+                            <p class="recipe-description">${cachedRecipe.description}</p>
+                            ${cachedRecipe.rating ? `<div class="recipe-rating-large">${getRatingStars(cachedRecipe.rating)}</div>` : ''}
+                            <div class="recipe-details-grid">
+                                ${cachedRecipe.bean_variety || cachedRecipe.bean_region ? `
+                                <div class="recipe-detail-item">
+                                    <div class="label"><i class="fas fa-seedling"></i> Bean</div>
+                                    <div class="value">
+                                        ${cachedRecipe.bean_variety ? formatFieldName(cachedRecipe.bean_variety) : ''}${cachedRecipe.bean_variety && cachedRecipe.bean_region ? ' from ' : ''}${cachedRecipe.bean_region ? formatFieldName(cachedRecipe.bean_region) : ''}${cachedRecipe.india_estate ? ` (${formatFieldName(cachedRecipe.india_estate)})` : ''}
+                                    </div>
+                                </div>
+                                ` : ''}
+                                ${cachedRecipe.brew_method ? `
+                                <div class="recipe-detail-item">
+                                    <div class="label"><i class="fas fa-coffee"></i> Brew Method</div>
+                                    <div class="value">${formatFieldName(cachedRecipe.brew_method)}</div>
+                                </div>
+                                ` : ''}
+                                ${cachedRecipe.coffee_amount && cachedRecipe.water_amount ? `
+                                <div class="recipe-detail-item">
+                                    <div class="label"><i class="fas fa-balance-scale"></i> Ratio</div>
+                                    <div class="value">${cachedRecipe.coffee_amount}g : ${cachedRecipe.water_amount}ml</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                            ${cachedRecipe.brewing_notes ? `
+                            <div class="recipe-notes">
+                                <h3><i class="fas fa-sticky-note"></i> Brewing Notes</h3>
+                                <p>${cachedRecipe.brewing_notes}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    modal.classList.add('show');
+                    this.showNotification('Showing cached recipe data (server unavailable)', 'warning');
+                    return;
+                } catch (parseError) {
+                    console.error('Error parsing cached recipe data:', parseError);
+                }
+            }
+            
+            if (error.message.includes('404')) {
+                this.showNotification('Recipe not found. It may have been deleted.', 'error');
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                this.showNotification('Network error. Please check your connection.', 'error');
+            } else {
+                this.showNotification('Error loading recipe details: ' + error.message, 'error');
+            }
+        }
     }
 
     async editRecipe(recipeId) {
@@ -2115,6 +2407,91 @@ class WhatYourRecipeApp {
         document.getElementById('userDropdown').classList.remove('show');
     }
 
+    async handleEditProfile() {
+        const fullName = document.getElementById('editFullName').value;
+        const username = document.getElementById('editUsername').value;
+        const bio = document.getElementById('editBio').value;
+
+        if (!fullName.trim() || !username.trim()) {
+            this.showNotification('Name and username are required', 'warning');
+            return;
+        }
+
+        try {
+            const updateData = {
+                full_name: fullName.trim(),
+                username: username.trim(),
+                bio: bio.trim()
+            };
+
+            const updatedUser = await api.updateProfile(updateData);
+            
+            // Update current user data
+            this.currentUser = { ...this.currentUser, ...updatedUser };
+            
+            // Update UI
+            this.updateUserInterface();
+            
+            // Close modal
+            document.getElementById('editProfileModal').classList.remove('show');
+            
+            this.showNotification('Profile updated successfully!', 'success');
+            
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            this.showNotification('Error updating profile. Please try again.', 'error');
+        }
+    }
+
+    handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            this.showNotification('Please select an image file', 'warning');
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            this.showNotification('Image size must be less than 5MB', 'warning');
+            return;
+        }
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const avatarPreview = document.getElementById('avatarPreview');
+            avatarPreview.innerHTML = `<img src="${e.target.result}" alt="New Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        };
+        reader.readAsDataURL(file);
+
+        // Upload avatar
+        this.uploadAvatar(file);
+    }
+
+    async uploadAvatar(file) {
+        try {
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            const response = await api.uploadAvatar(formData);
+            
+            // Update current user avatar
+            this.currentUser.avatar_url = response.avatar_url;
+            
+            // Update UI
+            this.updateUserInterface();
+            
+            this.showNotification('Avatar updated successfully!', 'success');
+            
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            this.showNotification('Error uploading avatar. Please try again.', 'error');
+        }
+    }
+
     showNotification(message, type = 'info') {
         const container = document.getElementById('notificationContainer');
         const notification = document.createElement('div');
@@ -2166,5 +2543,16 @@ document.addEventListener('click', (e) => {
     if (!e.target.closest('.user-menu')) {
         document.getElementById('userDropdown').classList.remove('show');
     }
-}); 
+    
+    // Close search dropdown when clicking outside
+    if (!e.target.closest('.search-container')) {
+        window.app?.hideSearchDropdown();
+    }
+});
+
+// Force reload if there's a version mismatch (cache busting)
+if (!window.appVersion) {
+    window.appVersion = '1.2.0';
+    console.log('🔄 App Version:', window.appVersion);
+} 
 document.head.appendChild(styleSheet); 

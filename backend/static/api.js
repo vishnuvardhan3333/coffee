@@ -202,6 +202,38 @@ class APIClient {
         return await this.request(`/save-status/${recipeId}`);
     }
 
+    // Profile management
+    async updateProfile(profileData) {
+        return await this.request('/profile', {
+            method: 'PUT',
+            body: JSON.stringify(profileData)
+        });
+    }
+
+    async uploadAvatar(formData) {
+        const url = `${this.baseURL}/profile/avatar`;
+        const config = {
+            method: 'POST',
+            headers: {
+                // Don't set Content-Type for FormData - browser will set it with boundary
+                ...(this.token && { 'Authorization': `Bearer ${this.token}` })
+            },
+            body: formData
+        };
+
+        try {
+            const response = await fetch(url, config);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Upload failed' }));
+                throw new Error(errorData.detail || `HTTP ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Avatar upload error:', error);
+            throw error;
+        }
+    }
+
     // Health check
     async healthCheck() {
         return await this.request('/health');

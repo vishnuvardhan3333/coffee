@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi import FastAPI, HTTPException, Depends, status, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
@@ -101,6 +101,11 @@ class UserSignup(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class ProfileUpdate(BaseModel):
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    bio: Optional[str] = None
 
 class Recipe(BaseModel):
     # Basic required fields
@@ -311,6 +316,84 @@ async def search_users(query: str, limit: int = 10):
     except Exception as e:
         return []
 
+@app.put("/profile")
+async def update_profile(profile_data: ProfileUpdate, current_user = Depends(get_current_user)):
+    try:
+        # Build update data - only include fields that are provided
+        update_data = {}
+        if profile_data.username is not None:
+            update_data["username"] = profile_data.username
+        if profile_data.full_name is not None:
+            update_data["full_name"] = profile_data.full_name
+        if profile_data.bio is not None:
+            update_data["bio"] = profile_data.bio
+        
+        # Update the profile in the database
+        result = supabase.table("profiles").update(update_data).eq("id", current_user.id).execute()
+        
+        if result.data:
+            return result.data[0]
+        else:
+            raise HTTPException(status_code=404, detail="Profile not found")
+            
+    except Exception as e:
+        print(f"Error updating profile: {e}")
+        raise HTTPException(status_code=500, detail="Error updating profile")
+
+@app.post("/profile/avatar")
+async def upload_avatar(avatar: UploadFile = File(...), current_user = Depends(get_current_user)):
+    try:
+        print(f"Avatar upload request from user: {current_user.id}")
+        print(f"File: {avatar.filename}, Content-Type: {avatar.content_type}")
+        
+        # Validate file type
+        if not avatar.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        # Validate file size (5MB limit)
+        contents = await avatar.read()
+        if len(contents) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File size must be less than 5MB")
+        
+        # Ensure user has a profile first
+        await ensure_user_profile(current_user)
+        
+        # Generate a beautiful placeholder avatar URL based on user info
+        user_profile = await get_user_profile(current_user)
+        display_name = user_profile.get('username', user_profile.get('full_name', 'User'))
+        
+        # Create a more personalized avatar URL
+        import urllib.parse
+        encoded_name = urllib.parse.quote(display_name)
+        placeholder_avatar_url = f"https://ui-avatars.com/api/?name={encoded_name}&background=8B4513&color=fff&size=200&bold=true&format=png"
+        
+        print(f"Generated avatar URL: {placeholder_avatar_url}")
+        
+        # Update profile with avatar URL
+        result = supabase.table("profiles").update({
+            "avatar_url": placeholder_avatar_url,
+            "updated_at": "now()"
+        }).eq("id", current_user.id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to update profile with avatar")
+        
+        print(f"Successfully updated avatar for user {current_user.id}")
+        return {
+            "avatar_url": placeholder_avatar_url, 
+            "message": "Avatar uploaded successfully",
+            "user_id": current_user.id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error uploading avatar: {e}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error uploading avatar: {str(e)}")
+
 # Recipe endpoints
 @app.post("/recipes")
 async def create_recipe(recipe_data: Recipe, current_user = Depends(get_current_user)):
@@ -423,10 +506,11 @@ async def get_recipes(
 @app.get("/recipes/{recipe_id}")
 async def get_recipe(recipe_id: str):
     try:
+        # Use the same query pattern as other recipe endpoints
         result = supabase.table("recipes").select("""
-            *, profiles!recipes_user_id_fkey(username, full_name, avatar_url),
-            votes(vote_type),
-            recipe_votes_count:votes(count)
+            *, 
+            profiles(id, username, full_name, avatar_url),
+            recipe_votes(id, vote_type, user_id)
         """).eq("id", recipe_id).single().execute()
         
         if result.data:
@@ -434,6 +518,7 @@ async def get_recipe(recipe_id: str):
         else:
             raise HTTPException(status_code=404, detail="Recipe not found")
     except Exception as e:
+        print(f"Error getting recipe {recipe_id}: {e}")
         raise HTTPException(status_code=404, detail="Recipe not found")
 
 @app.get("/recipes/search/{query}")
