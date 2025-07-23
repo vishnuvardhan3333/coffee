@@ -418,6 +418,37 @@ async def create_recipe(recipe_data: Recipe, current_user = Depends(get_current_
         print(f"Error creating recipe: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.put("/recipes/{recipe_id}")
+async def update_recipe(recipe_id: str, recipe_data: Recipe, current_user = Depends(get_current_user)):
+    try:
+        # Check if the recipe exists and belongs to the user
+        existing_recipe = supabase.table("recipes").select("*").eq("id", recipe_id).eq("user_id", current_user.id).execute()
+        
+        if not existing_recipe.data:
+            raise HTTPException(status_code=404, detail="Recipe not found or you don't have permission to edit it")
+        
+        # Convert to dict using model_dump (Pydantic v2 method)
+        recipe_dict = recipe_data.model_dump()
+        
+        # Remove fields that shouldn't be updated
+        recipe_dict.pop("user_id", None)  # Don't allow changing the owner
+        
+        print(f"Updating recipe {recipe_id}: {recipe_data.recipe_name}")
+        
+        result = supabase.table("recipes").update(recipe_dict).eq("id", recipe_id).eq("user_id", current_user.id).execute()
+        
+        if result.data:
+            print(f"Recipe updated successfully: {result.data[0]['id']}")
+            return result.data[0]
+        else:
+            raise HTTPException(status_code=400, detail="Failed to update recipe")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating recipe: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.get("/recipes")
 async def get_recipes(
     page: int = 1,

@@ -202,18 +202,6 @@
             <!-- Right Panel -->
             <aside class="right-panel">
                 <div class="panel-section">
-                    <h3>View Options</h3>
-                    <div class="view-toggles">
-                        <button class="toggle-btn active" id="basicViewToggle">
-                            <i class="fas fa-coffee"></i> Basic View
-                        </button>
-                        <button class="toggle-btn" id="proViewToggle">
-                            <i class="fas fa-cogs"></i> Pro View
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="panel-section">
                     <h3>Activity Feed</h3>
                     <div id="activityFeed" class="activity-feed">
                         <!-- Recent activity will be populated here -->
@@ -818,7 +806,17 @@
     <div id="recipeDetailModal" class="modal">
         <div class="modal-content recipe-detail-modal">
             <div class="modal-header">
-                <h2><i class="fas fa-coffee"></i> Recipe Details</h2>
+                <div class="modal-title-section">
+                    <h2><i class="fas fa-coffee"></i> Recipe Details</h2>
+                    <div class="recipe-view-toggles">
+                        <button class="toggle-btn active" id="recipeBasicViewToggle">
+                            <i class="fas fa-coffee"></i> Basic View
+                        </button>
+                        <button class="toggle-btn" id="recipeProViewToggle">
+                            <i class="fas fa-cogs"></i> Pro View
+                        </button>
+                    </div>
+                </div>
                 <button class="close-btn">
                     <i class="fas fa-times"></i>
                 </button>

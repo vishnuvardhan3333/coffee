@@ -1854,6 +1854,44 @@ body {
     background: var(--surface);
 }
 
+.modal-title-section {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex: 1;
+}
+
+.recipe-view-toggles {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.recipe-view-toggles .toggle-btn {
+    padding: 8px 12px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text-medium);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.recipe-view-toggles .toggle-btn:hover {
+    background: var(--hover);
+    color: var(--text-primary);
+}
+
+.recipe-view-toggles .toggle-btn.active {
+    background: var(--gradient);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
 .modal-header h2 {
     color: var(--text-dark);
     font-size: 1.5rem;
@@ -2451,5 +2489,23 @@ body {
     
     .recipe-form-extended .form-section {
         padding: 1rem;
+    }
+    
+    /* Recipe detail modal responsive */
+    .modal-title-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .recipe-view-toggles {
+        align-self: stretch;
+    }
+    
+    .recipe-view-toggles .toggle-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 10px 8px;
+        font-size: 0.85rem;
     }
 }

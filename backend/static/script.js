@@ -6,7 +6,7 @@ class WhatYourRecipeApp {
         this.currentUser = null;
         this.currentEditingId = null;
         this.isFormProMode = false;
-        this.isViewProMode = false;
+        this.isRecipeDetailProMode = false;
         this.feedPage = 0;
         this.feedLimit = 10;
         this.currentView = 'feed';
@@ -192,14 +192,8 @@ class WhatYourRecipeApp {
             });
         });
 
-        // View toggles
-        document.getElementById('basicViewToggle').addEventListener('click', () => {
-            this.setViewMode(false);
-        });
-
-        document.getElementById('proViewToggle').addEventListener('click', () => {
-            this.setViewMode(true);
-        });
+        // Recipe detail view toggles (will be added when modal opens)
+        // Removed global view toggles - now only available in recipe detail modal
 
         // Recipe form - these are no longer needed as we use page-based navigation
         // document.getElementById('closeCreateModal') and cancelRecipe buttons are replaced with back buttons
@@ -478,11 +472,11 @@ class WhatYourRecipeApp {
         this.loadTrendingTags();
     }
 
-    setViewMode(isProMode) {
-        this.isViewProMode = isProMode;
+    setRecipeDetailViewMode(isProMode) {
+        this.isRecipeDetailProMode = isProMode;
         
-        const basicBtn = document.getElementById('basicViewToggle');
-        const proBtn = document.getElementById('proViewToggle');
+        const basicBtn = document.getElementById('recipeBasicViewToggle');
+        const proBtn = document.getElementById('recipeProViewToggle');
 
         if (isProMode) {
             basicBtn.classList.remove('active');
@@ -492,32 +486,17 @@ class WhatYourRecipeApp {
             basicBtn.classList.add('active');
         }
 
-        // Update all recipe cards with new view mode
-        const feedContent = document.getElementById('feedContent');
-        const recipeCards = feedContent.querySelectorAll('.recipe-card');
-        
-        recipeCards.forEach(card => {
-            const detailsContainer = card.querySelector('.recipe-details');
-            if (detailsContainer) {
-                // Re-render the recipe details with new view mode
-                const recipeId = card.dataset.recipeId;
-                // Find the recipe data and update the details
-                this.updateRecipeCardDetails(card, isProMode);
-            }
-        });
+        // Re-render the current recipe detail with new view mode
+        this.updateRecipeDetailContent();
     }
 
-    updateRecipeCardDetails(card, isProMode) {
-        const detailsContainer = card.querySelector('.recipe-details');
-        if (!detailsContainer) return;
+    updateRecipeDetailContent() {
+        // Get the current recipe data from the modal
+        const modal = document.getElementById('recipeDetailModal');
+        if (!modal.classList.contains('show') || !this.currentRecipeData) return;
 
-        // Get recipe data from the card's dataset
-        const recipeData = JSON.parse(card.dataset.recipeData || '{}');
-        
-        // Update the details with appropriate view mode
-        detailsContainer.innerHTML = isProMode 
-            ? this.createProRecipeDetails(recipeData)
-            : this.createBasicRecipeDetails(recipeData);
+        const content = document.getElementById('recipeDetailContent');
+        content.innerHTML = this.generateRecipeDetailHTML(this.currentRecipeData);
     }
 
     setFormMode(isProMode) {
@@ -729,11 +708,9 @@ class WhatYourRecipeApp {
     }
 
     createRecipeCardDetails(recipe) {
-        if (this.isViewProMode) {
-            return this.createProRecipeDetails(recipe);
-        } else {
-            return this.createBasicRecipeDetails(recipe);
-        }
+        // Recipe cards always show basic view now
+        // Pro view is only available in the recipe detail modal
+        return this.createBasicRecipeDetails(recipe);
     }
 
     createBasicRecipeDetails(recipe) {
@@ -940,9 +917,13 @@ class WhatYourRecipeApp {
         }
     }
 
-    showCreateRecipePage() {
+    showCreateRecipePage(resetForCreate = true) {
         const feedContent = document.getElementById('feedContent');
-        this.currentEditingId = null;
+        
+        // Reset editing state when creating a new recipe (not when editing)
+        if (resetForCreate) {
+            this.currentEditingId = null;
+        }
         
         feedContent.innerHTML = `
             <div class="create-recipe-page-extended">
@@ -950,7 +931,7 @@ class WhatYourRecipeApp {
                     <button class="back-btn" onclick="app.goBack()">
                         <i class="fas fa-arrow-left"></i> Back
                     </button>
-                    <h1><i class="fas fa-plus-circle"></i> Create New Recipe</h1>
+                    <h1><i class="fas fa-${this.currentEditingId ? 'edit' : 'plus-circle'}"></i> ${this.currentEditingId ? 'Edit Recipe' : 'Create New Recipe'}</h1>
                 
                     <div class="header-controls">
                     <div class="recipe-privacy-toggle">
@@ -981,7 +962,7 @@ class WhatYourRecipeApp {
                         <div class="form-actions-fixed">
                             <button type="button" class="btn btn-secondary" onclick="app.goBack()">Cancel</button>
                             <button type="submit" class="btn btn-primary">
-                                <span id="submitBtnText">Create Recipe</span>
+                                <span id="submitBtnText">${this.currentEditingId ? 'Update Recipe' : 'Create Recipe'}</span>
                             </button>
                         </div>
                     </form>
@@ -1329,11 +1310,13 @@ class WhatYourRecipeApp {
 
         try {
             if (this.currentEditingId) {
-                // Update existing recipe - TODO: Implement update API endpoint
-                this.showNotification('Recipe update feature coming soon!', 'info');
-                return;
+                // Update existing recipe
+                console.log('Updating recipe with ID:', this.currentEditingId);
+                await api.updateRecipe(this.currentEditingId, recipe);
+                this.showNotification('Recipe updated successfully!', 'success');
             } else {
                 // Create new recipe
+                console.log('Creating new recipe');
                 await api.createRecipe(recipe);
                 this.showNotification('Recipe created successfully!', 'success');
             }
@@ -2116,136 +2099,17 @@ class WhatYourRecipeApp {
             const recipe = await api.getRecipe(recipeId);
             console.log('Recipe data received:', recipe);
             
-                        const formatDate = (dateString) => {
-                return new Date(dateString).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-            };
-
-            const getRatingStars = (rating) => {
-                if (!rating) return '';
-                const numRating = parseInt(rating);
-                const stars = '⭐'.repeat(Math.min(numRating, 10));
-                return `${stars} (${rating}/10)`;
-            };
-
-            const formatFieldName = (fieldName) => {
-                return fieldName
-                    .replace(/([A-Z])/g, ' $1')
-                    .replace(/^./, str => str.toUpperCase())
-                    .trim();
-            };
-
-            content.innerHTML = `
-                <div class="recipe-detail-header">
-                    <div class="recipe-author">
-                        <div class="avatar">
-                            ${recipe.profiles?.avatar_url 
-                                ? `<img src="${recipe.profiles.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
-                                : (recipe.profiles?.username?.charAt(0)?.toUpperCase() || recipe.profiles?.full_name?.charAt(0)?.toUpperCase() || 'U')
-                            }
-                        </div>
-                        <div class="info">
-                            <div class="name">${recipe.profiles?.username || recipe.profiles?.full_name || 'Anonymous Chef'}</div>
-                            <div class="time">${formatDate(recipe.created_at)}</div>
-                        </div>
-                    </div>
-                    <div class="recipe-privacy">
-                        <i class="fas fa-${recipe.is_public ? 'globe' : 'lock'}"></i>
-                        ${recipe.is_public ? 'Public' : 'Private'}
-                    </div>
-                </div>
-
-                <div class="recipe-detail-content">
-                    <h1 class="recipe-title">${recipe.recipe_name}</h1>
-                    <p class="recipe-description">${recipe.description}</p>
-                    
-                    ${recipe.rating ? `<div class="recipe-rating-large">${getRatingStars(recipe.rating)}</div>` : ''}
-                    
-                    <div class="recipe-details-grid">
-                        ${recipe.bean_variety || recipe.bean_region ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-seedling"></i> Bean</div>
-                            <div class="value">
-                                ${recipe.bean_variety ? formatFieldName(recipe.bean_variety) : ''}${recipe.bean_variety && recipe.bean_region ? ' from ' : ''}${recipe.bean_region ? formatFieldName(recipe.bean_region) : ''}${recipe.india_estate ? ` (${formatFieldName(recipe.india_estate)})` : ''}
-                            </div>
-                        </div>
-                        ` : ''}
-                        
-                        ${recipe.processing_type ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-cogs"></i> Processing</div>
-                            <div class="value">${formatFieldName(recipe.processing_type)}</div>
-                        </div>
-                        ` : ''}
-                        
-                        ${recipe.roast_level ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-fire"></i> Roast Level</div>
-                            <div class="value">${formatFieldName(recipe.roast_level)}</div>
-                        </div>
-                        ` : ''}
-                        
-                        ${recipe.brew_method ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-coffee"></i> Brew Method</div>
-                            <div class="value">${formatFieldName(recipe.brew_method)}</div>
-                        </div>
-                        ` : ''}
-                        
-                        ${recipe.grind_microns ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-cog"></i> Grind Size</div>
-                            <div class="value">${recipe.grind_microns}μm</div>
-                        </div>
-                        ` : ''}
-                        
-                        ${recipe.coffee_amount && recipe.water_amount ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-balance-scale"></i> Ratio</div>
-                            <div class="value">${recipe.coffee_amount}g : ${recipe.water_amount}ml</div>
-                        </div>
-                        ` : ''}
-                        
-                        ${recipe.water_temp ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-thermometer-half"></i> Water Temp</div>
-                            <div class="value">${recipe.water_temp}°C</div>
-                        </div>
-                        ` : ''}
-                        
-                        ${recipe.brew_time ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-clock"></i> Brew Time</div>
-                            <div class="value">${recipe.brew_time} min</div>
-                        </div>
-                        ` : ''}
-                        
-                        ${recipe.tds ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-flask"></i> TDS</div>
-                            <div class="value">${recipe.tds} ppm</div>
-                        </div>
-                        ` : ''}
-                        
-                        ${recipe.cupping_score ? `
-                        <div class="recipe-detail-item">
-                            <div class="label"><i class="fas fa-star"></i> Cupping Score</div>
-                            <div class="value">${recipe.cupping_score}/100</div>
-                        </div>
-                        ` : ''}
-                    </div>
-                    
-                    ${recipe.brewing_notes ? `
-                    <div class="recipe-notes">
-                        <h3><i class="fas fa-sticky-note"></i> Brewing Notes</h3>
-                        <p>${recipe.brewing_notes}</p>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
+            // Store recipe data for view mode switching
+            this.currentRecipeData = recipe;
+            
+            // Reset to basic view when opening modal
+            this.isRecipeDetailProMode = false;
+            
+            // Generate and display content
+            content.innerHTML = this.generateRecipeDetailHTML(recipe);
+            
+            // Set up view toggle event listeners
+            this.setupRecipeDetailViewToggles();
             
             modal.classList.add('show');
             
@@ -2262,82 +2126,12 @@ class WhatYourRecipeApp {
                     const cachedRecipe = JSON.parse(recipeCard.dataset.recipeData);
                     console.log('Using cached recipe data:', cachedRecipe);
                     
-                    // Use same display logic but with cached data  
-                    const formatDate = (dateString) => {
-                        return new Date(dateString).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short', 
-                            day: 'numeric'
-                        });
-                    };
-
-                    const getRatingStars = (rating) => {
-                        if (!rating) return '';
-                        const numRating = parseInt(rating);
-                        const stars = '⭐'.repeat(Math.min(numRating, 10));
-                        return `${stars} (${rating}/10)`;
-                    };
-
-                    const formatFieldName = (fieldName) => {
-                        return fieldName
-                            .replace(/([A-Z])/g, ' $1')
-                            .replace(/^./, str => str.toUpperCase())
-                            .trim();
-                    };
-
-                    content.innerHTML = `
-                        <div class="recipe-detail-header">
-                            <div class="recipe-author">
-                                <div class="avatar">
-                                    ${cachedRecipe.profiles?.avatar_url 
-                                        ? `<img src="${cachedRecipe.profiles.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
-                                        : (cachedRecipe.profiles?.username?.charAt(0)?.toUpperCase() || cachedRecipe.profiles?.full_name?.charAt(0)?.toUpperCase() || 'U')
-                                    }
-                                </div>
-                                <div class="info">
-                                    <div class="name">${cachedRecipe.profiles?.username || cachedRecipe.profiles?.full_name || 'Anonymous Chef'}</div>
-                                    <div class="time">${formatDate(cachedRecipe.created_at)}</div>
-                                </div>
-                            </div>
-                            <div class="recipe-privacy">
-                                <i class="fas fa-${cachedRecipe.is_public ? 'globe' : 'lock'}"></i>
-                                ${cachedRecipe.is_public ? 'Public' : 'Private'}
-                            </div>
-                        </div>
-                        <div class="recipe-detail-content">
-                            <h1 class="recipe-title">${cachedRecipe.recipe_name}</h1>
-                            <p class="recipe-description">${cachedRecipe.description}</p>
-                            ${cachedRecipe.rating ? `<div class="recipe-rating-large">${getRatingStars(cachedRecipe.rating)}</div>` : ''}
-                            <div class="recipe-details-grid">
-                                ${cachedRecipe.bean_variety || cachedRecipe.bean_region ? `
-                                <div class="recipe-detail-item">
-                                    <div class="label"><i class="fas fa-seedling"></i> Bean</div>
-                                    <div class="value">
-                                        ${cachedRecipe.bean_variety ? formatFieldName(cachedRecipe.bean_variety) : ''}${cachedRecipe.bean_variety && cachedRecipe.bean_region ? ' from ' : ''}${cachedRecipe.bean_region ? formatFieldName(cachedRecipe.bean_region) : ''}${cachedRecipe.india_estate ? ` (${formatFieldName(cachedRecipe.india_estate)})` : ''}
-                                    </div>
-                                </div>
-                                ` : ''}
-                                ${cachedRecipe.brew_method ? `
-                                <div class="recipe-detail-item">
-                                    <div class="label"><i class="fas fa-coffee"></i> Brew Method</div>
-                                    <div class="value">${formatFieldName(cachedRecipe.brew_method)}</div>
-                                </div>
-                                ` : ''}
-                                ${cachedRecipe.coffee_amount && cachedRecipe.water_amount ? `
-                                <div class="recipe-detail-item">
-                                    <div class="label"><i class="fas fa-balance-scale"></i> Ratio</div>
-                                    <div class="value">${cachedRecipe.coffee_amount}g : ${cachedRecipe.water_amount}ml</div>
-                                </div>
-                                ` : ''}
-                            </div>
-                            ${cachedRecipe.brewing_notes ? `
-                            <div class="recipe-notes">
-                                <h3><i class="fas fa-sticky-note"></i> Brewing Notes</h3>
-                                <p>${cachedRecipe.brewing_notes}</p>
-                            </div>
-                            ` : ''}
-                        </div>
-                    `;
+                    // Store cached recipe data and use the same HTML generation
+                    this.currentRecipeData = cachedRecipe;
+                    this.isRecipeDetailProMode = false;
+                    
+                    content.innerHTML = this.generateRecipeDetailHTML(cachedRecipe);
+                    this.setupRecipeDetailViewToggles();
                     modal.classList.add('show');
                     this.showNotification('Showing cached recipe data (server unavailable)', 'warning');
                     return;
@@ -2356,41 +2150,352 @@ class WhatYourRecipeApp {
         }
     }
 
+    generateRecipeDetailHTML(recipe) {
+        const formatDate = (dateString) => {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        };
+
+        const getRatingStars = (rating) => {
+            if (!rating) return '';
+            const numRating = parseInt(rating);
+            const stars = '⭐'.repeat(Math.min(numRating, 10));
+            return `${stars} (${rating}/10)`;
+        };
+
+        const formatFieldName = (fieldName) => {
+            return fieldName
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase())
+                .trim();
+        };
+
+        // Generate basic or pro details based on current mode
+        const detailsContent = this.isRecipeDetailProMode 
+            ? this.generateProRecipeDetailsGrid(recipe, formatFieldName)
+            : this.generateBasicRecipeDetailsGrid(recipe, formatFieldName);
+
+        return `
+            <div class="recipe-detail-header">
+                <div class="recipe-author">
+                    <div class="avatar">
+                        ${recipe.profiles?.avatar_url 
+                            ? `<img src="${recipe.profiles.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
+                            : (recipe.profiles?.username?.charAt(0)?.toUpperCase() || recipe.profiles?.full_name?.charAt(0)?.toUpperCase() || 'U')
+                        }
+                    </div>
+                    <div class="info">
+                        <div class="name">${recipe.profiles?.username || recipe.profiles?.full_name || 'Anonymous Chef'}</div>
+                        <div class="time">${formatDate(recipe.created_at)}</div>
+                    </div>
+                </div>
+                <div class="recipe-privacy">
+                    <i class="fas fa-${recipe.is_public ? 'globe' : 'lock'}"></i>
+                    ${recipe.is_public ? 'Public' : 'Private'}
+                </div>
+            </div>
+
+            <div class="recipe-detail-content">
+                <h1 class="recipe-title">${recipe.recipe_name}</h1>
+                <p class="recipe-description">${recipe.description}</p>
+                
+                ${recipe.rating ? `<div class="recipe-rating-large">${getRatingStars(recipe.rating)}</div>` : ''}
+                
+                <div class="recipe-details-grid">
+                    ${detailsContent}
+                </div>
+                
+                ${recipe.brewing_notes ? `
+                <div class="recipe-notes">
+                    <h3><i class="fas fa-sticky-note"></i> Brewing Notes</h3>
+                    <p>${recipe.brewing_notes}</p>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    generateBasicRecipeDetailsGrid(recipe, formatFieldName) {
+        return `
+            ${recipe.bean_variety || recipe.bean_region ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-seedling"></i> Bean</div>
+                <div class="value">
+                    ${recipe.bean_variety ? formatFieldName(recipe.bean_variety) : ''}${recipe.bean_variety && recipe.bean_region ? ' from ' : ''}${recipe.bean_region ? formatFieldName(recipe.bean_region) : ''}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${recipe.roast_level ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-fire"></i> Roast Level</div>
+                <div class="value">${formatFieldName(recipe.roast_level)}</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.brew_method ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-coffee"></i> Brew Method</div>
+                <div class="value">${formatFieldName(recipe.brew_method)}</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.coffee_amount && recipe.water_amount ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-balance-scale"></i> Ratio</div>
+                <div class="value">${recipe.coffee_amount}g : ${recipe.water_amount}ml</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.milk_preference ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-glass-whiskey"></i> Milk</div>
+                <div class="value">${formatFieldName(recipe.milk_preference)}</div>
+            </div>
+            ` : ''}
+        `;
+    }
+
+    generateProRecipeDetailsGrid(recipe, formatFieldName) {
+        return `
+            ${recipe.bean_variety || recipe.bean_region ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-seedling"></i> Bean</div>
+                <div class="value">
+                    ${recipe.bean_variety ? formatFieldName(recipe.bean_variety) : ''}${recipe.bean_variety && recipe.bean_region ? ' from ' : ''}${recipe.bean_region ? formatFieldName(recipe.bean_region) : ''}${recipe.india_estate ? ` (${formatFieldName(recipe.india_estate)})` : ''}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${recipe.processing_type ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-cogs"></i> Processing</div>
+                <div class="value">${formatFieldName(recipe.processing_type)}</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.roast_level || recipe.roast_type ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-fire"></i> Roast</div>
+                <div class="value">
+                    ${recipe.roast_level ? formatFieldName(recipe.roast_level) : ''}${recipe.roast_level && recipe.roast_type ? ' (' : ''}${recipe.roast_type ? formatFieldName(recipe.roast_type) : ''}${recipe.roast_level && recipe.roast_type ? ')' : ''}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${recipe.brew_method ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-coffee"></i> Brew Method</div>
+                <div class="value">${formatFieldName(recipe.brew_method)}</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.grind_microns ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-cog"></i> Grind Size</div>
+                <div class="value">${recipe.grind_microns}μm</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.water_composition ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-tint"></i> Water</div>
+                <div class="value">${formatFieldName(recipe.water_composition)}</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.tds ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-flask"></i> TDS</div>
+                <div class="value">${recipe.tds} ppm</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.coffee_amount && recipe.water_amount ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-balance-scale"></i> Ratio</div>
+                <div class="value">${recipe.coffee_amount}g : ${recipe.water_amount}ml</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.water_temp ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-thermometer-half"></i> Water Temp</div>
+                <div class="value">${recipe.water_temp}°C</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.brew_time ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-clock"></i> Brew Time</div>
+                <div class="value">${recipe.brew_time} min</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.milk_preference ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-glass-whiskey"></i> Milk</div>
+                <div class="value">${formatFieldName(recipe.milk_preference)}</div>
+            </div>
+            ` : ''}
+            
+            ${recipe.cupping_score ? `
+            <div class="recipe-detail-item">
+                <div class="label"><i class="fas fa-star"></i> Cupping Score</div>
+                <div class="value">${recipe.cupping_score}/100</div>
+            </div>
+            ` : ''}
+        `;
+    }
+
+    setupRecipeDetailViewToggles() {
+        // Remove existing event listeners
+        const basicBtn = document.getElementById('recipeBasicViewToggle');
+        const proBtn = document.getElementById('recipeProViewToggle');
+        
+        if (basicBtn && proBtn) {
+            // Reset button states
+            basicBtn.classList.add('active');
+            proBtn.classList.remove('active');
+            
+            // Add new event listeners
+            basicBtn.addEventListener('click', () => {
+                this.setRecipeDetailViewMode(false);
+            });
+            
+            proBtn.addEventListener('click', () => {
+                this.setRecipeDetailViewMode(true);
+            });
+        }
+    }
+
     async editRecipe(recipeId) {
         try {
-            const recipe = await api.getRecipe(recipeId);
+            console.log('Starting recipe edit for ID:', recipeId);
+            
+            // First check if we have cached recipe data in the card
+            const recipeCard = document.querySelector(`[data-recipe-id="${recipeId}"]`);
+            let recipe = null;
+            
+            if (recipeCard && recipeCard.dataset.recipeData) {
+                // Try to use cached data first
+                try {
+                    recipe = JSON.parse(recipeCard.dataset.recipeData);
+                    console.log('Using cached recipe data for edit:', recipe);
+                } catch (parseError) {
+                    console.log('Failed to parse cached data, fetching from API');
+                }
+            }
+            
+            // If no cached data or parsing failed, fetch from API
+            if (!recipe) {
+                console.log('Fetching recipe from API for editing...');
+                recipe = await api.getRecipe(recipeId);
+                console.log('Received recipe data from API:', recipe);
+            }
 
             this.currentEditingId = recipeId;
-            this.showCreateRecipePage();
+            console.log('Showing create recipe page for editing...');
+            this.showCreateRecipePage(false);
+            
+            console.log('Populating form with recipe data...');
             this.populateForm(recipe);
-            document.getElementById('submitBtnText').textContent = 'Update Recipe';
+            
+            console.log('Recipe edit page setup complete');
 
         } catch (error) {
-            console.error('Error loading recipe for edit:', error);
-            this.showNotification('Error loading recipe', 'error');
+            console.error('Error in editRecipe:', error);
+            console.error('Recipe ID:', recipeId);
+            console.error('Error details:', error.message);
+            
+            if (error.message.includes('404')) {
+                this.showNotification('Recipe not found. It may have been deleted.', 'error');
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                this.showNotification('Network error. Please check your connection and try again.', 'error');
+            } else {
+                this.showNotification('Error loading recipe for editing: ' + error.message, 'error');
+            }
         }
     }
 
     populateForm(recipe) {
-        Object.keys(recipe).forEach(key => {
-            const element = document.getElementById(this.camelCase(key));
-            if (element) {
-                if (element.type === 'checkbox') {
-                    element.checked = recipe[key];
-                } else {
-                    element.value = recipe[key] || '';
+        console.log('Populating form with recipe:', recipe);
+        
+        try {
+            // Create a mapping of database fields to form field IDs
+            const fieldMapping = {
+                'recipe_name': 'recipeName',
+                'description': 'description',
+                'rating': 'rating',
+                'date_created': 'dateCreated',
+                'bean_variety': 'beanVariety',
+                'bean_region': 'beanRegion',
+                'india_estate': 'indiaEstate',
+                'processing_type': 'processingMethod',
+                'roast_level': 'roastLevel',
+                'roast_type': 'roastType',
+                'brew_method': 'brewingMethod',
+                'grind_size': 'grindSize',
+                'grind_microns': 'grindMicrons',
+                'water_composition': 'waterComposition',
+                'tds': 'tds',
+                'coffee_amount': 'coffeeWeight',
+                'water_amount': 'waterWeight',
+                'water_temp': 'waterTemp',
+                'brew_time': 'brewTime',
+                'milk_preference': 'milkPreference',
+                'brewing_notes': 'notes',
+                'tasting_notes': 'tastingNotes'
+            };
+
+            // Populate form fields
+            Object.keys(recipe).forEach(key => {
+                const formFieldId = fieldMapping[key] || this.camelCase(key);
+                const element = document.getElementById(formFieldId);
+                
+                if (element && recipe[key] !== null && recipe[key] !== undefined) {
+                    if (element.type === 'checkbox') {
+                        element.checked = Boolean(recipe[key]);
+                    } else {
+                        element.value = recipe[key];
+                    }
+                    console.log(`Populated ${formFieldId} with value:`, recipe[key]);
+                } else if (recipe[key] !== null && recipe[key] !== undefined) {
+                    console.warn(`Form field not found for ${key} (looking for ${formFieldId})`);
+                }
+            });
+            
+            // Handle special cases
+            if (recipe.bean_region === 'india') {
+                this.handleRegionChange('india');
+            }
+
+            // Handle privacy toggle
+            const privacyToggle = document.getElementById('recipePrivacy');
+            if (privacyToggle && recipe.is_public !== undefined) {
+                privacyToggle.checked = Boolean(recipe.is_public);
+                this.updatePrivacyLabel(Boolean(recipe.is_public));
+            }
+            
+            // Format date if needed
+            if (recipe.date_created || recipe.created_at) {
+                const dateInput = document.getElementById('dateCreated');
+                if (dateInput) {
+                    const dateValue = recipe.date_created || recipe.created_at;
+                    // Convert date to YYYY-MM-DD format for date input
+                    const date = new Date(dateValue);
+                    dateInput.value = date.toISOString().split('T')[0];
                 }
             }
-        });
-        
-        // Handle special cases
-        if (recipe.bean_region === 'india') {
-            this.handleRegionChange('india');
-        }
 
-        if (recipe.is_public !== undefined) {
-            document.getElementById('recipePrivacy').checked = recipe.is_public;
-            this.updatePrivacyLabel(recipe.is_public);
+            console.log('Form population completed successfully');
+            
+        } catch (error) {
+            console.error('Error populating form:', error);
+            this.showNotification('Error loading recipe data into form', 'error');
         }
     }
 

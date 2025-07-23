@@ -129,6 +129,13 @@ class APIClient {
         });
     }
 
+    async updateRecipe(recipeId, recipeData) {
+        return await this.request(`/recipes/${recipeId}`, {
+            method: 'PUT',
+            body: JSON.stringify(recipeData),
+        });
+    }
+
     async getRecipes(page = 1, limit = 10, view = 'feed', trendingDays = 7) {
         let url = `/recipes?page=${page}&limit=${limit}&view=${view}`;
         if (view === 'trending') {
